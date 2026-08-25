@@ -109,10 +109,10 @@ func prefixCols(cols, alias string) string {
 func (d *DB) CreateTransfer(ctx context.Context, t *Transfer, files []File) error {
 	return d.Tx(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `
-			INSERT INTO transfers (id, user_id, slug, status, password_hash, expires_at,
+			INSERT INTO transfers (id, user_id, slug, status, password_hash, expiry, expires_at,
 			                       total_bytes, created_at, updated_at)
-			VALUES (?, ?, ?, 'pending', '', ?, ?, ?, ?)`,
-			t.ID, t.UserID, t.Slug, t.ExpiresAt, t.TotalBytes, t.CreatedAt, t.CreatedAt)
+			VALUES (?, ?, ?, 'pending', '', ?, ?, ?, ?, ?)`,
+			t.ID, t.UserID, t.Slug, t.Expiry, t.ExpiresAt, t.TotalBytes, t.CreatedAt, t.CreatedAt)
 		if err != nil {
 			if isUnique(err) {
 				return ErrSlugTaken
@@ -134,11 +134,11 @@ func (d *DB) CreateTransfer(ctx context.Context, t *Transfer, files []File) erro
 	})
 }
 
-const transferCols = `id, user_id, slug, status, password_hash, expires_at, total_bytes, downloads, created_at, completed_at, updated_at`
+const transferCols = `id, user_id, slug, status, password_hash, expiry, expires_at, total_bytes, downloads, created_at, completed_at, updated_at`
 
 func scanTransfer(row interface{ Scan(...any) error }) (*Transfer, error) {
 	var t Transfer
-	err := row.Scan(&t.ID, &t.UserID, &t.Slug, &t.Status, &t.PasswordHash, &t.ExpiresAt,
+	err := row.Scan(&t.ID, &t.UserID, &t.Slug, &t.Status, &t.PasswordHash, &t.Expiry, &t.ExpiresAt,
 		&t.TotalBytes, &t.Downloads, &t.CreatedAt, &t.CompletedAt, &t.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
@@ -182,7 +182,7 @@ func (d *DB) ListTransfers(ctx context.Context, userID int64) ([]Transfer, error
 	var out []Transfer
 	for rows.Next() {
 		var t Transfer
-		if err := rows.Scan(&t.ID, &t.UserID, &t.Slug, &t.Status, &t.PasswordHash, &t.ExpiresAt,
+		if err := rows.Scan(&t.ID, &t.UserID, &t.Slug, &t.Status, &t.PasswordHash, &t.Expiry, &t.ExpiresAt,
 			&t.TotalBytes, &t.Downloads, &t.CreatedAt, &t.CompletedAt, &t.UpdatedAt, &t.FileCount); err != nil {
 			return nil, err
 		}
@@ -216,11 +216,11 @@ func (d *DB) PendingTransfers(ctx context.Context, userID int64) ([]Transfer, er
 
 // UpdateTransferSettings applies the slug/password/expiry edit, rejecting a
 // slug another live transfer already holds.
-func (d *DB) UpdateTransferSettings(ctx context.Context, id, slug, passwordHash string, expiresAt *int64) error {
+func (d *DB) UpdateTransferSettings(ctx context.Context, id, slug, passwordHash, expiry string, expiresAt *int64) error {
 	res, err := d.ExecContext(ctx, `
-		UPDATE transfers SET slug = ?, password_hash = ?, expires_at = ?, updated_at = ?
+		UPDATE transfers SET slug = ?, password_hash = ?, expiry = ?, expires_at = ?, updated_at = ?
 		WHERE id = ? AND status != 'deleted'`,
-		slug, passwordHash, expiresAt, time.Now().Unix(), id)
+		slug, passwordHash, expiry, expiresAt, time.Now().Unix(), id)
 	if err != nil {
 		if isUnique(err) {
 			return ErrSlugTaken

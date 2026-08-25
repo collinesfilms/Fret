@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"math/rand"
 	"strings"
 	"testing"
 	"time"
@@ -243,5 +242,3 @@ func BenchmarkStreamThroughput(b *testing.B) {
 		}
 	}
 }
-
-var _ = rand.Int

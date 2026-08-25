@@ -22,3 +22,7 @@
 *.swp
 .idea/
 .vscode/
+
+# Built frontend, embedded at compile time
+/internal/api/dist/*
+!/internal/api/dist/.gitkeep

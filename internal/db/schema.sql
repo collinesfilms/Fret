@@ -36,6 +36,9 @@ CREATE TABLE IF NOT EXISTS transfers (
     slug           TEXT NOT NULL UNIQUE COLLATE NOCASE,
     status         TEXT NOT NULL DEFAULT 'pending',  -- pending | live | deleted
     password_hash  TEXT NOT NULL DEFAULT '',         -- argon2id, '' = open
+    -- Both forms of the expiry are kept: the timestamp drives the sweeper,
+    -- the symbol drives which segment the edit control shows as selected.
+    expiry         TEXT NOT NULL DEFAULT '7d',       -- 24h | 7d | 30d | never
     expires_at     INTEGER,                          -- NULL = never
     total_bytes    INTEGER NOT NULL DEFAULT 0,
     downloads      INTEGER NOT NULL DEFAULT 0,
