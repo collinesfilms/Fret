@@ -271,6 +271,12 @@ without it, and its absence is the single most common way a Fret install fails.
 Fret detects this specific case and says so in the error rather than leaving
 you to guess.
 
+A browser reports a CORS rejection to JavaScript as an ordinary network error —
+the specification deliberately hides the detail — so the symptom is an upload
+that fails with "network error while uploading a part" and nothing in the
+server log. If that is what you see, check the preflight `OPTIONS` in devtools
+before looking anywhere else.
+
 **MinIO** permits all origins by default and already exposes `ETag`, so there
 is nothing to do unless you have narrowed it. To narrow it:
 
@@ -292,6 +298,27 @@ MINIO_API_CORS_ALLOW_ORIGIN=https://fret.yourdomain.com
   }
 ]
 ```
+
+### Behind a reverse proxy
+
+If a proxy sits in front of your bucket, two things will bite.
+
+**`$host` strips the port.** nginx's `$host` is the hostname *without* the
+port; `$http_host` keeps it. SigV4 signs the `Host` header, so with
+
+```nginx
+proxy_set_header Host $host;   # wrong in front of S3 on a non-default port
+```
+
+a request signed for `nas:9000` arrives claiming `nas`, the signature is
+recomputed over the wrong value, and you get `SignatureDoesNotMatch`. Use
+`$http_host`. It only shows up on non-default ports, which is why a proxy on
+443 can work for years and then break the moment you point something at `:9000`.
+
+**Don't proxy Fret's own traffic.** `FRET_S3_INTERNAL_ENDPOINT` should point
+straight at the storage backend. Fret's own requests need no CORS whatsoever —
+CORS is a browser mechanism — so routing them through a CORS proxy adds a hop
+and a signing hazard for no benefit.
 
 ### Lifecycle rules
 
