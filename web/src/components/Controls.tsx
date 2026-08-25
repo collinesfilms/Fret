@@ -45,6 +45,14 @@ export interface Segment<T extends string> {
   label: string
 }
 
+/**
+ * A recessed track with one handle in it.
+ *
+ * The selection is a single element that travels, not a background that
+ * cross-fades from one cell to the next. Every segment is flex:1 from a zero
+ * basis, so they are exactly equal in width whatever their labels say — which
+ * is what lets the handle be positioned arithmetically rather than measured.
+ */
 export function Segmented<T extends string>({
   segments,
   value,
@@ -63,12 +71,26 @@ export function Segmented<T extends string>({
    */
   committed?: boolean
 }) {
+  const index = segments.findIndex((segment) => segment.value === value)
+
   return (
     <div
       className={`fret-segmented${committed ? ' fret-segmented--committed' : ''}`}
       role="radiogroup"
       aria-label={label}
     >
+      {/* No handle at all for a value that is not one of the segments, rather
+          than one parked off the end of the track. */}
+      {index >= 0 && (
+        <span
+          className="fret-segmented__knob"
+          aria-hidden="true"
+          style={{
+            width: `${100 / segments.length}%`,
+            transform: `translateX(${index * 100}%)`,
+          }}
+        />
+      )}
       {segments.map((segment) => (
         <button
           key={segment.value}

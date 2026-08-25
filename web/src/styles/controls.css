@@ -276,14 +276,59 @@
 
 /* ---------- segmented control ---------- */
 
+/*
+ * A channel with a handle in it.
+ *
+ * The track is the one flat control allowed a little depth, for the same
+ * reason the drawer's finger slot is: a handle that slides needs somewhere to
+ * slide, and a groove drawn without any is just a rectangle. It is kept well
+ * under the screen and the keys — one soft inset pass and a hairline of light
+ * along the bottom lip, no more.
+ */
 .fret-segmented {
+  position: relative;
   display: flex;
-  gap: 3px;
   background: var(--sunk);
   border: 1px solid var(--edge);
   border-radius: 10px;
-  padding: 3px;
+  /* No padding: the handle runs the full height of the channel, so the track
+     has no inner margin for it to float in. */
+  padding: 0;
+  box-shadow: inset 0 1px 2px rgba(35, 33, 31, 0.11),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.55);
   transition: border-color var(--durBase) ease;
+  /* The handle's corners are cut by the track's own, so a handle at either
+     end nests into the corner instead of overhanging it. */
+  overflow: hidden;
+}
+
+:root[data-theme='dark'] .fret-segmented {
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.45),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/*
+ * The handle. One element that travels, rather than a background handed from
+ * one cell to the next — the difference is the whole reason this reads as a
+ * thing inside a groove. Its width is a fraction of the track and its travel
+ * a multiple of its own width, both exact because the segments are equal.
+ *
+ * --easeSnap, because this is a small control answering a press.
+ */
+.fret-segmented__knob {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--body);
+  border-radius: 9px;
+  box-shadow: 0 1px 2px rgba(35, 33, 31, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  transition: transform var(--durBase) var(--easeSnap), width var(--durBase) var(--easeSnap);
+  pointer-events: none;
+}
+
+:root[data-theme='dark'] .fret-segmented__knob {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 /*
@@ -292,8 +337,10 @@
  * moves, which makes the transition jump.
  */
 .fret-segmented__item {
+  position: relative;
+  z-index: 1;
   flex: 1;
-  border-radius: 7px;
+  border-radius: 9px;
   border-width: 1px;
   border-style: solid;
   border-color: transparent;
@@ -306,7 +353,7 @@
   padding: 7px 4px;
   cursor: pointer;
   outline: none;
-  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+  transition: color var(--durFast) ease;
   min-width: 0;
 }
 
@@ -320,14 +367,14 @@
 }
 
 .fret-segmented__item--on {
-  background: var(--body);
-  border-color: var(--edge);
   color: var(--fg);
 }
 
 .fret-segmented__item:focus-visible {
   outline: 2px solid var(--fg2);
-  outline-offset: 1px;
+  /* Inside the track: the outline would otherwise be clipped by the overflow
+     that keeps the handle in its channel. */
+  outline-offset: -3px;
 }
 
 /* ---------- popover ---------- */

@@ -92,6 +92,12 @@ The original handoff described a physical device: warm off-white body, black
 inset readout screen, perforated vent, a few raised keys. Depth is rationed to
 the screen, the vent and primary keys — everything else is flat.
 
+The two exceptions earned it by being places something moves: the drawer's
+finger slot, and the expiry track. A pull that is not recessed is not a pull,
+and a handle that slides needs a groove to slide in — a channel drawn without
+any depth is just a rectangle. Both are kept well under the screen and the
+keys: one soft inset pass and a hairline of light along the lower lip.
+
 - **Type rule.** Machine-generated or countable → Martian Mono, small and
   tracked out. Human-written → Schibsted Grotesk. `lib/format.ts` produces
   every mono value.
