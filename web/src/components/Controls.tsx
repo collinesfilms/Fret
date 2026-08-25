@@ -136,10 +136,10 @@ export function Grow({ open, children }: { open: boolean; children: ReactNode })
  *
  * With no save button, a field has to say for itself that a change took. It
  * shows a tick and a green border for a moment after committing, an error
- * beneath when the server refuses, and — where one applies — a trailing action
- * that does the thing you would otherwise have to know to do by hand: draw a
- * new link, or clear a password rather than guessing that emptying the box
- * removes protection.
+ * beneath when the server refuses, and — where one applies — an action beside
+ * it that does the thing you would otherwise have to know: that emptying the
+ * password box is what removes the protection, or that a link you did not
+ * choose can be drawn again.
  */
 export function LiveField({
   committed,
@@ -151,10 +151,10 @@ export function LiveField({
   /** Set briefly after a successful commit. */
   committed?: boolean
   /**
-   * A button inside the trailing edge of the field. It stays in place when it
-   * has nothing to do, greyed rather than absent: a control that disappears
-   * takes the knowledge that it exists with it, and the field would resize
-   * under the cursor every time the value emptied.
+   * A button beside the field, at the field's own height. It stays in place
+   * when it has nothing to do, greyed rather than absent: a control that
+   * appears and disappears teaches nothing, and the row would reflow every
+   * time the value emptied.
    */
   action?: { label: string; onClick: () => void; disabled?: boolean; title?: string }
   error?: string
@@ -162,62 +162,44 @@ export function LiveField({
   below?: ReactNode
   ref?: React.Ref<HTMLInputElement>
 } & React.InputHTMLAttributes<HTMLInputElement>) {
-  const trail = useRef<HTMLSpanElement>(null)
-  const [pad, setPad] = useState<number | undefined>(undefined)
-
-  // The label decides the width — "SHUFFLE" and "RESET" are not the same size,
-  // and neither are their translations — so the text is kept clear of the
-  // button by measuring it rather than by a constant that will be wrong in
-  // French.
-  useLayoutEffect(() => {
-    const element = trail.current
-    if (!element) return
-    const measure = () => setPad(element.offsetWidth + 16)
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [action?.label])
-
   return (
     <>
       <span className="fret-field__wrap">
-        <input
-          className={`fret-field${error ? ' fret-field--error' : ''}${
-            committed ? ' fret-field--committed' : ''
-          }`}
-          spellCheck={false}
-          autoComplete="off"
-          autoCapitalize="off"
-          autoCorrect="off"
-          aria-invalid={error ? true : undefined}
-          style={{ paddingRight: pad }}
-          {...rest}
-        />
-        <span className="fret-field__trail" ref={trail}>
+        <span className="fret-field__box">
+          <input
+            className={`fret-field${error ? ' fret-field--error' : ''}${
+              committed ? ' fret-field--committed' : ''
+            }`}
+            spellCheck={false}
+            autoComplete="off"
+            autoCapitalize="off"
+            autoCorrect="off"
+            aria-invalid={error ? true : undefined}
+            {...rest}
+          />
           <span
             className={`fret-field__tick${committed ? ' fret-field__tick--on' : ''}`}
             aria-hidden="true"
           />
-          {action && (
-            <button
-              type="button"
-              className="fret-field__action"
-              onClick={action.onClick}
-              // Keeps the field from blurring under the press. Without this
-              // the blur lands first and commits whatever is half-typed, and
-              // the button can change identity between the press and the
-              // release — Shuffle becoming Reset because the commit it just
-              // caused made the name a custom one. Suppressing the focus
-              // change costs nothing: the button is still reachable by Tab.
-              onMouseDown={(event) => event.preventDefault()}
-              disabled={action.disabled}
-              title={action.title}
-            >
-              {action.label}
-            </button>
-          )}
         </span>
+        {action && (
+          <button
+            type="button"
+            className="fret-field__action"
+            onClick={action.onClick}
+            // Keeps the field from blurring under the press. Without this the
+            // blur lands first and commits whatever is half-typed, and the
+            // button can change identity between the press and the release —
+            // Shuffle becoming Reset because the commit it just caused made
+            // the name a custom one. Suppressing the focus change costs
+            // nothing: the button is still reachable by Tab.
+            onMouseDown={(event) => event.preventDefault()}
+            disabled={action.disabled}
+            title={action.title}
+          >
+            {action.label}
+          </button>
+        )}
       </span>
       {error && <div className="fret-field__error">{error}</div>}
       {below}

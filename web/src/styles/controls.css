@@ -477,23 +477,37 @@
  * different object in a different colour.
  */
 .fret-tray {
+  /*
+   * The panel's own corner radius. The drawer starts this far *above* the
+   * panel's bottom edge and pads the difference back, so the strip it hides
+   * behind the panel is exactly what the panel's rounded corners cut away.
+   * Without it those corners open onto the studio with the drawer's square
+   * shoulders directly beneath — barely visible at the desktop inset, and a
+   * clear notch on a phone where the drawer runs the full width.
+   */
+  --tuck: 20px;
+
   position: absolute;
   left: 14px;
   right: 14px;
-  top: 100%;
+  top: calc(100% - var(--tuck));
+  padding-top: var(--tuck);
   z-index: 1;
   background-color: var(--body);
   background-image:
     repeating-linear-gradient(94deg, rgba(255, 255, 255, 0.055) 0 1px, transparent 1px 5px),
     repeating-linear-gradient(86deg, rgba(35, 33, 31, 0.016) 0 1px, transparent 1px 9px),
-    linear-gradient(180deg, rgba(35, 33, 31, 0.03) 0%, transparent 42%);
+    linear-gradient(180deg, rgba(35, 33, 31, 0.03) var(--tuck), transparent 46%);
   border: 1px solid var(--edge);
   border-top: none;
   border-radius: 0 0 18px 18px;
-  /* The panel's bottom edge stands proud of the drawer front, so it casts
-     down onto it. The outer shadow is the drawer's own, on the studio. */
-  box-shadow: inset 0 7px 11px -8px rgba(35, 33, 31, 0.4),
-    0 18px 34px rgba(35, 33, 31, 0.13);
+  /*
+   * No inset highlight along the top: the panel sits above the drawer in the
+   * stack and casts its own --lift down onto it, which is the real thing
+   * rather than a drawn imitation of it. This shadow is the drawer's own, on
+   * the studio behind.
+   */
+  box-shadow: 0 18px 34px rgba(35, 33, 31, 0.13);
   transform: translateY(-100%);
   opacity: 0;
   pointer-events: none;
@@ -513,9 +527,8 @@
   background-image:
     repeating-linear-gradient(94deg, rgba(255, 255, 255, 0.02) 0 1px, transparent 1px 5px),
     repeating-linear-gradient(86deg, rgba(0, 0, 0, 0.07) 0 1px, transparent 1px 9px),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, transparent 42%);
-  box-shadow: inset 0 7px 11px -8px rgba(0, 0, 0, 0.75),
-    0 18px 34px rgba(0, 0, 0, 0.5);
+    linear-gradient(180deg, rgba(0, 0, 0, 0.2) var(--tuck), transparent 46%);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.5);
 }
 
 .fret-tray__inner {
@@ -603,45 +616,53 @@
   }
 }
 
-/* ---------- per-field confirmation and trailing actions ---------- */
+/* ---------- per-field confirmation and actions ---------- */
 
 /*
  * Nothing is saved explicitly, so each field has to say for itself that it
- * took: the border goes green briefly and a tick fades in — enough to notice,
- * not enough to interrupt.
+ * took: the border goes green briefly and a tick fades in at its trailing
+ * edge — enough to notice, not enough to interrupt.
  *
- * The tick shares the trailing edge with the field's action, in one cluster
- * rather than as two things competing for the same corner. The input's own
- * right padding is measured from that cluster, so a longer label in another
- * language moves the text out of its way instead of running under it.
+ * The action sits beside the field rather than inside it, at the field's own
+ * height. Inside, it had to be measured against its own label to keep the
+ * text clear of it, it sat on the value it was about to change, and it made
+ * an already too-wide input wider still. Beside it, the row reads as one
+ * control and one thing to do about it.
  */
 .fret-field__wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.fret-field__box {
   position: relative;
-  display: block;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+/* Room for the tick, which lives at the trailing edge of the input itself —
+   it reports the field, not the button. */
+.fret-field__box .fret-field {
+  padding-right: 26px;
 }
 
 .fret-field--committed {
   border-color: var(--ok);
 }
 
-.fret-field__trail {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  pointer-events: none;
-}
-
 .fret-field__tick {
+  position: absolute;
+  right: 11px;
+  top: 50%;
   width: 9px;
   height: 5px;
   border-left: 1.5px solid var(--ok);
   border-bottom: 1.5px solid var(--ok);
-  transform: translateY(-2px) rotate(-45deg);
+  transform: translateY(-70%) rotate(-45deg);
   opacity: 0;
+  pointer-events: none;
   transition: opacity var(--durFast) ease;
 }
 
@@ -650,20 +671,18 @@
 }
 
 /*
- * A field's trailing action.
- *
- * Both of these are things you would otherwise have to know: that emptying
- * the password box is what removes the protection, and that a link you did
- * not choose can be drawn again. Disabled it stays where it is rather than
- * vanishing — a control that appears and disappears teaches nothing, and the
- * field would resize under the cursor every time the value emptied.
+ * Shuffle, Reset and Clear share a width so they line up down the drawer as a
+ * column rather than sitting at three different distances from the edge. The
+ * minimum is set against the longest of them in either language, and they
+ * grow past it rather than truncate.
  */
 .fret-field__action {
-  pointer-events: auto;
+  flex-shrink: 0;
+  min-width: 82px;
   background: var(--body);
   border: 1px solid var(--edge);
-  border-radius: 7px;
-  padding: 4px 8px;
+  border-radius: 10px;
+  padding: 0 10px;
   font-family: var(--mono);
   font-size: 7px;
   letter-spacing: 0.16em;
