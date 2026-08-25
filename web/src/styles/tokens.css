@@ -18,6 +18,9 @@
   --edge: #dcd7cf;
   --edge2: #c5bfb6;
   --sunk: #e5e1da;
+  /* A step deeper than --sunk, for a control that is held down rather than
+     merely hovered. Distinct enough to read at a glance across a row. */
+  --pressed: #d3ccc0;
 
   --screen: #17171a;
   --screenLine: #25252a;
@@ -66,6 +69,7 @@
   --edge: #38352f;
   --edge2: #484338;
   --sunk: #1e1d1b;
+  --pressed: #121110;
 
   --screen: #0c0c0e;
   --screenLine: #1c1c20;
