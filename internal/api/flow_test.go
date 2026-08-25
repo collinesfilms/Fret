@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"testing"
@@ -760,5 +761,63 @@ func TestTransferCanKeepItsOwnSlug(t *testing.T) {
 		map[string]any{"slug": transfer.Slug, "expiry": "30d"})
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("a transfer was blocked by its own reservation: %d %s", resp.StatusCode, body)
+	}
+}
+
+// TestDownloadUrlCarriesNoResponseOverrides keeps the presigned download URL
+// as plain as possible.
+//
+// Every signed query parameter has to be percent-encoded identically by the
+// SDK, by any proxy in front of the bucket and by the storage backend. A
+// response-content-disposition value carries spaces, quotes, semicolons and
+// apostrophes, so it is the most likely of all of them to be encoded slightly
+// differently somewhere in that chain and rejected. The object carries its own
+// filename, so the parameter buys nothing.
+func TestDownloadUrlCarriesNoResponseOverrides(t *testing.T) {
+	h := newHarness(t)
+	transfer := h.completeTransfer(t)
+	files, err := h.db.FilesFor(t.Context(), transfer.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp, _ := h.public(http.MethodGet, fmt.Sprintf("/api/t/%s/files/%s", transfer.Slug, files[0].ID), nil)
+	if resp.StatusCode != http.StatusFound {
+		t.Fatalf("expected a redirect, got %d", resp.StatusCode)
+	}
+	location := resp.Header.Get("Location")
+
+	parsed, err := url.Parse(location)
+	if err != nil {
+		t.Fatalf("the redirect target does not parse: %v", err)
+	}
+	for parameter := range parsed.Query() {
+		if strings.HasPrefix(strings.ToLower(parameter), "response-") {
+			t.Errorf("presigned URL carries %q; the object already knows its own name", parameter)
+		}
+	}
+	// The signature must still be there, or this test would pass on a URL that
+	// simply lost its query string.
+	if parsed.Query().Get("X-Amz-Signature") == "" {
+		t.Error("presigned URL has no signature")
+	}
+}
+
+// The filename a recipient sees comes from the object, so it has to be set
+// when the upload is opened rather than at download time.
+func TestObjectsCarryTheirFilename(t *testing.T) {
+	h := newHarness(t)
+	meta := []map[string]any{
+		{"name": "Bureau Pantin.lh3d.zip", "size": 64, "type": "application/zip"},
+	}
+	_, body := h.do(http.MethodPost, "/api/transfers", map[string]any{"files": meta})
+	transfer := decodeInto[transferJSON](t, body)
+	if got := transfer.Files[0].Name; got != "Bureau Pantin.lh3d.zip" {
+		t.Errorf("a name with a space did not survive: %q", got)
+	}
+	// And it must remain intact through the key, which is separately sanitised.
+	files, _ := h.db.FilesFor(t.Context(), transfer.ID)
+	if !strings.HasSuffix(files[0].ObjectKey, "Bureau Pantin.lh3d.zip") {
+		t.Errorf("object key lost the filename: %q", files[0].ObjectKey)
 	}
 }

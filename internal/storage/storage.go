@@ -212,13 +212,21 @@ func (s *Store) PutEmpty(ctx context.Context, key, filename string) error {
 	return nil
 }
 
-// PresignDownload returns a short-lived URL for a single file, with the
-// download filename set so the recipient does not receive an opaque key.
-func (s *Store) PresignDownload(ctx context.Context, key, filename string) (string, error) {
+// PresignDownload returns a short-lived URL for a single file.
+//
+// The download filename comes from the Content-Disposition stored on the
+// object itself, set when the upload was opened. Overriding it again here with
+// a response-content-disposition parameter would be redundant, and actively
+// fragile: that value carries spaces, quotes, semicolons and apostrophes, and
+// as a *signed* query parameter every one of them has to be percent-encoded
+// identically by the SDK, by any proxy in front of the bucket, and by the
+// storage backend itself. One disagreement anywhere and the signature is
+// rejected. The object already knows its own name; asking again only creates
+// somewhere for that to go wrong.
+func (s *Store) PresignDownload(ctx context.Context, key string) (string, error) {
 	req, err := s.presigner.PresignGetObject(ctx, &s3.GetObjectInput{
-		Bucket:                     aws.String(s.bucket),
-		Key:                        aws.String(key),
-		ResponseContentDisposition: aws.String(contentDisposition(filename)),
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
 	}, s3.WithPresignExpires(s.downloadTTL))
 	if err != nil {
 		return "", fmt.Errorf("presign download: %w", err)

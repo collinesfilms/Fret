@@ -136,7 +136,7 @@ func (s *Server) handlePublicFile(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "no such file")
 		return
 	}
-	url, err := s.store.PresignDownload(r.Context(), file.ObjectKey, file.Name)
+	url, err := s.store.PresignDownload(r.Context(), file.ObjectKey)
 	if err != nil {
 		s.log.Error("presigning download", "error", err)
 		fail(w, http.StatusBadGateway, "storage did not issue a download link")
