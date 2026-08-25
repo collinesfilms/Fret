@@ -70,6 +70,22 @@ func New(ctx context.Context, o Options) (*Store, error) {
 			}
 			// MinIO and most self-hosted gateways serve path-style addressing.
 			opt.UsePathStyle = o.ForcePathStyle
+
+			// Keep the SDK's checksum machinery out of presigned URLs.
+			//
+			// By default the SDK asks for response checksum validation, which
+			// sets x-amz-checksum-mode on GetObject — and a presigned URL
+			// signs it, so it lands in X-Amz-SignedHeaders. A browser then
+			// fetches that URL and sends no such header, because no browser
+			// ever would. S3 implementations that check every signed header is
+			// actually present reject the request outright, which is a
+			// confusing way to be told the URL was built for an SDK rather
+			// than for a browser.
+			//
+			// Fret's presigned URLs are only ever handed to browsers, so the
+			// only header they may sign is host.
+			opt.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
+			opt.ResponseChecksumValidation = aws.ResponseChecksumValidationWhenRequired
 		}), nil
 	}
 
