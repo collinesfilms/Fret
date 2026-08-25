@@ -38,6 +38,7 @@ const en = {
   'settings.expires': 'EXPIRES',
   'settings.passwordNone': 'none',
   'settings.passwordKept': 'unchanged',
+  'settings.linkConsequence': 'the link you sent will stop working',
 
   'tag.sharedAs': 'PREVIOUS LINK',
   'tag.restore': 'RESTORE',
@@ -47,6 +48,7 @@ const en = {
   'key.copied': 'Copied to clipboard',
   'key.copy': 'Copy link',
   'key.open': 'OPEN',
+  'key.options': 'OPTIONS',
   'key.new': 'NEW',
   'key.cancel': 'CANCEL',
 
@@ -155,6 +157,7 @@ const fr: Record<StringKey, string> = {
   'settings.expires': 'EXPIRE',
   'settings.passwordNone': 'aucun',
   'settings.passwordKept': 'inchangé',
+  'settings.linkConsequence': 'le lien envoyé cessera de fonctionner',
 
   'tag.sharedAs': 'LIEN PRÉCÉDENT',
   'tag.restore': 'RESTAURER',
@@ -164,6 +167,7 @@ const fr: Record<StringKey, string> = {
   'key.copied': 'Copié',
   'key.copy': 'Copier le lien',
   'key.open': 'VOIR',
+  'key.options': 'OPTIONS',
   'key.new': 'NOUVEAU',
   'key.cancel': 'ANNULER',
 

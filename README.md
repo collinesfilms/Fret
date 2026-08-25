@@ -102,15 +102,19 @@ have actually landed.
   <img src="docs/screenshots/ready.png" alt="A completed transfer" width="720">
 </p>
 
-### Renaming a link you already sent
+### Options
+
+Most transfers need no adjusting, so the device shows three keys and keeps the
+rest in a drawer. Nothing in it needs saving: discrete choices apply on the
+spot, text fields when you leave them, and each says for itself that it took.
 
 Renaming a live transfer kills the old link — which is the point, since you
-usually rename precisely because it went to the wrong person. But the old name
-is not lost: it stays reserved to that transfer, and a paper tag slides out
-from under the device offering it back.
+usually rename precisely because it went to the wrong person. Focus the field
+and it says so. The old name stays reserved to that transfer either way, so
+typing it back always works.
 
 <p align="center">
-  <img src="docs/screenshots/restore-tag.png" alt="The restore tag" width="720">
+  <img src="docs/screenshots/options-tray.png" alt="The options tray" width="720">
 </p>
 
 ### Your transfers

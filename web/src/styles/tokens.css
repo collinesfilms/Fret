@@ -58,6 +58,33 @@
 
   --sans: 'Schibsted Grotesk', system-ui, -apple-system, sans-serif;
   --mono: 'Martian Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /*
+   * Motion.
+   *
+   * Four curves, and each one means something:
+   *
+   *   --easeOut    things settling into place. No overshoot, no drama.
+   *   --easeSnap   small controls answering a press. Barely overshoots.
+   *   --easeTray   anything sliding out of the device. Overshoots enough to
+   *                read as weight arriving, which is what makes a drawer feel
+   *                pulled rather than faded.
+   *   --easeExit   anything leaving. Faster than it arrived, and never
+   *                overshooting — a thing on its way out should not bounce.
+   *
+   * Durations are named for what they are, not how long: a press is not
+   * allowed to take as long as a drawer.
+   */
+  --easeOut: cubic-bezier(0.32, 0.9, 0.28, 1);
+  --easeSnap: cubic-bezier(0.4, 1.2, 0.5, 1);
+  --easeTray: cubic-bezier(0.26, 1.32, 0.36, 1);
+  --easeExit: cubic-bezier(0.4, 0, 0.7, 0.4);
+
+  --durPress: 0.12s;
+  --durFast: 0.18s;
+  --durBase: 0.28s;
+  --durPanel: 0.44s;
+  --durTray: 0.52s;
 }
 
 :root[data-theme='dark'] {
@@ -150,6 +177,27 @@
     box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.28), 0 0 9px 0 rgba(255, 255, 255, 0.14);
   }
 }
+/*
+ * Completion.
+ *
+ * The device settles, the way something with weight does when it finishes.
+ * Almost nothing — six thousandths of scale — but enough that finishing is
+ * felt rather than merely displayed, which is the whole difference between a
+ * progress bar reaching the end and a transfer being done.
+ */
+@keyframes fretSettle {
+  0% { transform: scale(1); }
+  38% { transform: scale(1.007); }
+  100% { transform: scale(1); }
+}
+
+/* The ready lamp arrives rather than switching on. */
+@keyframes fretBloom {
+  0% { box-shadow: 0 0 0 0 var(--ok), inset 0 1px 1px rgba(255, 255, 255, 0.5); }
+  45% { box-shadow: 0 0 14px 3px var(--ok), inset 0 1px 1px rgba(255, 255, 255, 0.5); }
+  100% { box-shadow: 0 0 6px 0 var(--ok), inset 0 1px 1px rgba(255, 255, 255, 0.5); }
+}
+
 @keyframes fretSpin {
   to { transform: rotate(360deg); }
 }

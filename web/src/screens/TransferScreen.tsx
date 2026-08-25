@@ -13,8 +13,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Field, Grow, Segmented, SettingsRow } from '../components/Controls'
-import { Key, LinkReadout, Panel, RestoreTag, Screen, Strip, Vent } from '../components/Device'
+import { Consequence, Grow, LiveField, Segmented, SettingsRow, Tray } from '../components/Controls'
+import { Key, LinkReadout, Panel, Screen, Strip, Vent } from '../components/Device'
 import { api, ApiError, type Expiry, type Me, type Resumable, type Transfer } from '../lib/api'
 import { filterSlug, formatBytes, rate, remaining, splitBytes } from '../lib/format'
 import { fileCount, translate, type Locale, type StringKey } from '../lib/i18n'
@@ -55,11 +55,18 @@ export function TransferScreen({
   const [committed, setCommitted] = useState<Settings>({ slug: '', password: '', expiry: '7d' })
   const [copied, setCopied] = useState(false)
   const [slugError, setSlugError] = useState<string | null>(null)
+  const [trayOpen, setTrayOpen] = useState(false)
+  /** Which field last committed, so it can confirm itself briefly. */
+  const [confirmed, setConfirmed] = useState<keyof Settings | null>(null)
+  const [slugFocused, setSlugFocused] = useState(false)
+  /** True for a moment after an upload lands, to play the completion once. */
+  const [justLanded, setJustLanded] = useState(false)
 
 
   const uploadRef = useRef<Upload | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const copyTimer = useRef<number | undefined>(undefined)
+  const confirmTimer = useRef<number | undefined>(undefined)
 
   const t = useCallback(
     (key: StringKey, vars?: Record<string, string | number>) => translate(locale, key, vars),
@@ -69,6 +76,7 @@ export function TransferScreen({
   useEffect(() => {
     return () => {
       window.clearTimeout(copyTimer.current)
+      window.clearTimeout(confirmTimer.current)
       uploadRef.current?.cancel()
     }
   }, [])
@@ -131,6 +139,8 @@ export function TransferScreen({
         setPhase('ready')
         // The material drains rather than snapping to empty.
         setDraining(true)
+        setJustLanded(true)
+        window.setTimeout(() => setJustLanded(false), 900)
         onTransfersChanged()
       } catch (err) {
         if (err instanceof CancelledError) return
@@ -195,6 +205,7 @@ export function TransferScreen({
       api.deleteTransfer(transfer.id).catch(() => undefined)
     }
     setPhase('empty')
+    setTrayOpen(false)
     setTransfer(null)
     setProgress(null)
     setDraining(false)
@@ -235,6 +246,12 @@ export function TransferScreen({
    * they are left, which is late enough that a half-typed slug is never
    * reserved and a half-typed password is never the real one.
    */
+  const confirm = useCallback((field: keyof Settings) => {
+    setConfirmed(field)
+    window.clearTimeout(confirmTimer.current)
+    confirmTimer.current = window.setTimeout(() => setConfirmed(null), 1400)
+  }, [])
+
   const commit = useCallback(
     async (patch: Partial<Settings>) => {
       if (!transfer) return
@@ -256,6 +273,7 @@ export function TransferScreen({
         setTransfer(updated)
         setCommitted({ slug: updated.slug, password: next.password, expiry: updated.expiry })
         setSettings((current) => ({ ...current, slug: updated.slug, expiry: updated.expiry }))
+        confirm(Object.keys(patch)[0] as keyof Settings)
         onTransfersChanged()
       } catch (err) {
         // A rejected value snaps the field back to what the server holds,
@@ -271,17 +289,10 @@ export function TransferScreen({
         }
       }
     },
-    [transfer, committed, onTransfersChanged, t],
+    [transfer, committed, confirm, onTransfersChanged, t],
   )
 
-  /** Puts the link back to the name it was handed out under. */
-  const restoreSharedSlug = () => {
-    const shared = transfer?.sharedSlug
-    if (!shared) return
-    setSettings((current) => ({ ...current, slug: shared }))
-    commit({ slug: shared })
-  }
-
+  const alreadySent = (transfer?.sharedSlug ?? '') !== ''
   const uploading = phase === 'uploading'
   const percent = Math.floor(progress?.percent ?? 0)
 
@@ -311,7 +322,7 @@ export function TransferScreen({
     }
     return {
       label: copied ? t('key.copied') : t('key.copy'),
-      lamp: { color: 'var(--ok)' },
+      lamp: { color: 'var(--ok)', bloom: justLanded },
       inert: false,
       action: copyLink,
     }
@@ -332,7 +343,7 @@ export function TransferScreen({
 
       {/* The tag is a sibling of the panel so it can pass behind it. */}
       <div className="fret-deck">
-        <Panel>
+        <Panel settled={justLanded}>
           {/*
             The screen only accepts files while it is empty. Once a transfer
             exists it is a readout, and a stray click opening a file picker —
@@ -384,7 +395,13 @@ export function TransferScreen({
                       : t('app.complete')
                 }
                 pulse={uploading}
-                right={<LinkReadout host={me.publicHost} slug={committed.slug} />}
+                right={
+                  <LinkReadout
+                    host={me.publicHost}
+                    slug={committed.slug}
+                    onOpen={phase === 'ready' ? () => onOpenRecipient(committed.slug) : undefined}
+                  />
+                }
               />
 
               <div className="fret-filelist">
@@ -441,60 +458,14 @@ export function TransferScreen({
         */}
         <Vent />
 
+        {/*
+          The device shows three keys and nothing else: what you came to do,
+          how to stop, and where the rest lives. Everything a transfer can be
+          adjusted to is real but out of the way, which is the point — most
+          transfers need none of it.
+        */}
         <Grow open={phase !== 'empty'}>
-          <div className="fret-settings">
-            {/* Text fields commit when you leave them, or on Enter. */}
-            <SettingsRow label={t('settings.link')}>
-              <Field
-                value={settings.slug}
-                error={slugError ?? undefined}
-                onChange={(e) => {
-                  setSettings({ ...settings, slug: filterSlug(e.target.value) })
-                  setSlugError(null)
-                }}
-                onBlur={() => commit({ slug: settings.slug })}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') e.currentTarget.blur()
-                  if (e.key === 'Escape') setSettings({ ...settings, slug: committed.slug })
-                }}
-                aria-label={t('settings.link')}
-              />
-            </SettingsRow>
-
-            <SettingsRow label={t('settings.password')}>
-              <Field
-                type="password"
-                value={settings.password}
-                placeholder={t('settings.passwordNone')}
-                onChange={(e) => setSettings({ ...settings, password: e.target.value })}
-                onBlur={() => commit({ password: settings.password })}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') e.currentTarget.blur()
-                }}
-                aria-label={t('settings.password')}
-              />
-            </SettingsRow>
-
-            {/* A discrete choice has no half-made state, so it commits at once. */}
-            <SettingsRow label={t('settings.expires')}>
-              <Segmented<Expiry>
-                value={settings.expiry}
-                onChange={(expiry) => {
-                  setSettings({ ...settings, expiry })
-                  commit({ expiry })
-                }}
-                label={t('settings.expires')}
-                segments={[
-                  { value: '24h', label: '24h' },
-                  { value: '7d', label: '7d' },
-                  { value: '30d', label: '30d' },
-                  { value: 'never', label: 'never' },
-                ]}
-              />
-            </SettingsRow>
-          </div>
-
-          <div className="fret-actions" style={{ marginTop: 14 }}>
+          <div className="fret-actions">
             <Key
               className="fret-actions__primary"
               inert={keyState.inert}
@@ -506,11 +477,11 @@ export function TransferScreen({
             <Key
               variant="alt"
               className="fret-actions__secondary"
-              onClick={() => onOpenRecipient(committed.slug)}
-              /* Nothing to preview until the transfer is actually live. */
-              inert={uploading}
+              onClick={() => setTrayOpen(!trayOpen)}
+              aria-expanded={trayOpen}
+              pressed={trayOpen}
             >
-              {t('key.open')}
+              {t('key.options')}
             </Key>
             <Key variant="alt" className="fret-actions__secondary" onClick={reset}>
               {uploading ? t('key.cancel') : t('key.new')}
@@ -519,12 +490,77 @@ export function TransferScreen({
         </Grow>
         </Panel>
 
-        <RestoreTag
-          slug={transfer?.sharedSlug ?? ''}
-          current={committed.slug}
-          locale={locale}
-          onRestore={restoreSharedSlug}
-        />
+        <Tray open={trayOpen && phase !== 'empty'}>
+          <div className="fret-settings">
+            <SettingsRow label={t('settings.link')}>
+              <LiveField
+                value={settings.slug}
+                error={slugError ?? undefined}
+                committed={confirmed === 'slug'}
+                onChange={(e) => {
+                  setSettings({ ...settings, slug: filterSlug(e.target.value) })
+                  setSlugError(null)
+                }}
+                onFocus={() => setSlugFocused(true)}
+                onBlur={() => {
+                  setSlugFocused(false)
+                  commit({ slug: settings.slug })
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur()
+                  if (e.key === 'Escape') setSettings({ ...settings, slug: committed.slug })
+                }}
+                aria-label={t('settings.link')}
+                below={
+                  <Consequence open={slugFocused && alreadySent}>
+                    {t('settings.linkConsequence')}
+                  </Consequence>
+                }
+              />
+            </SettingsRow>
+
+            <SettingsRow label={t('settings.password')}>
+              <LiveField
+                type="password"
+                value={settings.password}
+                placeholder={t('settings.passwordNone')}
+                committed={confirmed === 'password'}
+                onChange={(e) => setSettings({ ...settings, password: e.target.value })}
+                onBlur={() => commit({ password: settings.password })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur()
+                }}
+                onClear={
+                  settings.password !== '' || transfer?.hasPassword
+                    ? () => {
+                        setSettings({ ...settings, password: '' })
+                        commit({ password: '' })
+                      }
+                    : undefined
+                }
+                aria-label={t('settings.password')}
+              />
+            </SettingsRow>
+
+            <SettingsRow label={t('settings.expires')}>
+              <Segmented<Expiry>
+                value={settings.expiry}
+                onChange={(expiry) => {
+                  setSettings({ ...settings, expiry })
+                  commit({ expiry })
+                }}
+                label={t('settings.expires')}
+                committed={confirmed === 'expiry'}
+                segments={[
+                  { value: '24h', label: '24h' },
+                  { value: '7d', label: '7d' },
+                  { value: '30d', label: '30d' },
+                  { value: 'never', label: 'never' },
+                ]}
+              />
+            </SettingsRow>
+          </div>
+        </Tray>
       </div>
     </div>
   )

@@ -283,6 +283,7 @@
   border: 1px solid var(--edge);
   border-radius: 10px;
   padding: 3px;
+  transition: border-color var(--durBase) ease;
 }
 
 /*
@@ -311,6 +312,11 @@
 
 .fret-segmented__item:hover {
   color: var(--fg2);
+}
+
+/* Confirms that the change reached the server, briefly. */
+.fret-segmented--committed {
+  border-color: var(--ok);
 }
 
 .fret-segmented__item--on {
@@ -450,4 +456,168 @@
   text-transform: uppercase;
   color: var(--fg3);
   margin-top: 4px;
+}
+
+/*
+ * The options tray.
+ *
+ * A drawer pulled out of the base of the device, in the device's own material
+ * — not a panel floating over it. It is a sibling of the panel rather than a
+ * child, so it can pass behind it on the way out: a negative z-index child
+ * paints above its parent's background and would slide over the device
+ * instead of from under it.
+ */
+.fret-tray {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: 100%;
+  z-index: 1;
+  background: var(--body);
+  border: 1px solid var(--edge);
+  border-top: none;
+  border-radius: 0 0 18px 18px;
+  box-shadow: 0 18px 34px rgba(35, 33, 31, 0.13);
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform var(--durTray) var(--easeExit), opacity var(--durFast) ease;
+}
+
+.fret-tray--open {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+  /* Coming out is the gesture worth feeling, so it gets the spring; going
+     back in is just tidying up. */
+  transition: transform var(--durTray) var(--easeTray), opacity var(--durFast) ease;
+}
+
+:root[data-theme='dark'] .fret-tray {
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.5);
+}
+
+.fret-tray__inner {
+  padding: 16px 18px 18px;
+}
+
+/* A shallow lip along the top edge, so the drawer reads as a separate piece
+   of the object rather than a continuation of the panel. */
+.fret-tray__lip {
+  height: 3px;
+  margin: 0 auto 14px;
+  width: 46px;
+  border-radius: 999px;
+  background: var(--edge2);
+  opacity: 0.7;
+}
+
+/* ---------- per-field confirmation ---------- */
+
+/*
+ * Nothing is saved explicitly, so each field has to say for itself that it
+ * took. The border goes green briefly and a tick fades in at the trailing
+ * edge — enough to notice, not enough to interrupt.
+ */
+.fret-field__wrap {
+  position: relative;
+  display: block;
+}
+
+.fret-field--committed {
+  border-color: var(--ok);
+}
+
+.fret-field__tick {
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  width: 9px;
+  height: 5px;
+  border-left: 1.5px solid var(--ok);
+  border-bottom: 1.5px solid var(--ok);
+  transform: translateY(-70%) rotate(-45deg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--durFast) ease;
+}
+
+.fret-field__tick--on {
+  opacity: 1;
+}
+
+/* ---------- a field's trailing action ---------- */
+
+/*
+ * Clearing a password had no affordance at all: you had to know that emptying
+ * the field removed the protection.
+ */
+.fret-field__clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--body);
+  border: 1px solid var(--edge);
+  border-radius: 7px;
+  padding: 4px 8px;
+  font-family: var(--mono);
+  font-size: 7px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg3);
+  cursor: pointer;
+  transition: color var(--durFast) ease, border-color var(--durFast) ease;
+}
+
+.fret-field__clear:hover {
+  color: var(--accent);
+  border-color: var(--edge2);
+}
+
+/* ---------- the slug's consequence ---------- */
+
+/*
+ * Shown while the link field has focus and the link has already been sent.
+ * It states the consequence at the moment the consequence is in play, which
+ * is what the kraft tag was doing from across the device with a button
+ * attached. The name stays reserved either way, so it can simply be typed
+ * back; that no longer needs a control of its own.
+ */
+.fret-warn {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows var(--durBase) var(--easeOut),
+    opacity var(--durFast) ease;
+}
+
+.fret-warn--on {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.fret-warn__inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.fret-warn__text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 7px;
+  font-family: var(--mono);
+  font-size: 7.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.fret-warn__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  flex-shrink: 0;
 }

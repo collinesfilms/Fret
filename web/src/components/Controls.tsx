@@ -50,14 +50,25 @@ export function Segmented<T extends string>({
   value,
   onChange,
   label,
+  committed,
 }: {
   segments: Segment<T>[]
   value: T
   onChange: (value: T) => void
   label?: string
+  /**
+   * Set briefly once the server has taken the change. The selection moving is
+   * the interface agreeing; this is the server agreeing, and with nothing to
+   * press they are not otherwise the same event.
+   */
+  committed?: boolean
 }) {
   return (
-    <div className="fret-segmented" role="radiogroup" aria-label={label}>
+    <div
+      className={`fret-segmented${committed ? ' fret-segmented--committed' : ''}`}
+      role="radiogroup"
+      aria-label={label}
+    >
       {segments.map((segment) => (
         <button
           key={segment.value}
@@ -114,6 +125,99 @@ export function Grow({ open, children }: { open: boolean; children: ReactNode })
       aria-hidden={!open}
     >
       <div className="fret-grow__inner" ref={inner}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * A field that reports its own state.
+ *
+ * With no save button, a field has to say for itself that a change took. It
+ * shows a tick and a green border for a moment after committing, an error
+ * beneath when the server refuses, and — for a password — a way to clear it
+ * that does not depend on knowing that emptying the box removes protection.
+ */
+export function LiveField({
+  committed,
+  onClear,
+  error,
+  below,
+  ...rest
+}: {
+  /** Set briefly after a successful commit. */
+  committed?: boolean
+  /** Renders a Clear action inside the field when given. */
+  onClear?: () => void
+  error?: string
+  /** Anything that belongs directly beneath the field, e.g. a consequence. */
+  below?: ReactNode
+  ref?: React.Ref<HTMLInputElement>
+} & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <>
+      <span className="fret-field__wrap">
+        <input
+          className={`fret-field${error ? ' fret-field--error' : ''}${
+            committed ? ' fret-field--committed' : ''
+          }`}
+          spellCheck={false}
+          autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
+          aria-invalid={error ? true : undefined}
+          style={onClear ? { paddingRight: 62 } : undefined}
+          {...rest}
+        />
+        {onClear ? (
+          <button type="button" className="fret-field__clear" onClick={onClear} tabIndex={-1}>
+            Clear
+          </button>
+        ) : (
+          <span
+            className={`fret-field__tick${committed ? ' fret-field__tick--on' : ''}`}
+            aria-hidden="true"
+          />
+        )}
+      </span>
+      {error && <div className="fret-field__error">{error}</div>}
+      {below}
+    </>
+  )
+}
+
+/**
+ * A consequence shown at the moment it applies.
+ *
+ * It occupies no space until it does, so a field that has nothing to warn
+ * about is not laid out around a warning that never appears.
+ */
+export function Consequence({ open, children }: { open: boolean; children: ReactNode }) {
+  return (
+    <div className={`fret-warn${open ? ' fret-warn--on' : ''}`} aria-hidden={!open}>
+      <div className="fret-warn__inner">
+        <div className="fret-warn__text">
+          <span className="fret-warn__dot" />
+          {children}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The options drawer, pulled out of the base of the device.
+ *
+ * Rendered as a sibling of the panel rather than inside it, so it can travel
+ * out from behind: a negative z-index child paints above its own parent's
+ * background and would slide over the device instead of from under it.
+ */
+export function Tray({ open, children }: { open: boolean; children: ReactNode }) {
+  return (
+    <div className={`fret-tray${open ? ' fret-tray--open' : ''}`} inert={!open} aria-hidden={!open}>
+      <div className="fret-tray__inner">
+        <div className="fret-tray__lip" aria-hidden="true" />
         {children}
       </div>
     </div>

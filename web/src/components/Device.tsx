@@ -12,13 +12,23 @@ import { translate, type Locale, type StringKey } from '../lib/i18n'
 export function Panel({
   children,
   recipient,
+  settled,
   ...rest
 }: {
   children: ReactNode
   recipient?: boolean
+  /** Plays the completion settle once. */
+  settled?: boolean
 } & React.HTMLAttributes<HTMLDivElement>) {
+  const classes = [
+    'fret-panel',
+    recipient && 'fret-panel--recipient',
+    settled && 'fret-panel--settled',
+  ]
+    .filter(Boolean)
+    .join(' ')
   return (
-    <div className={`fret-panel${recipient ? ' fret-panel--recipient' : ''}`} {...rest}>
+    <div className={classes} {...rest}>
       {children}
     </div>
   )
@@ -34,13 +44,21 @@ export function Lamp({
   size = 7,
   pulse,
   breathe,
+  bloom,
 }: {
   color: string
   size?: number
   pulse?: boolean
   breathe?: boolean
+  /** Blooms once, for a lamp that has just come good. */
+  bloom?: boolean
 }) {
-  const className = ['fret-lamp', pulse && 'fret-lamp--pulse', breathe && 'fret-lamp--breathe']
+  const className = [
+    'fret-lamp',
+    pulse && 'fret-lamp--pulse',
+    breathe && 'fret-lamp--breathe',
+    bloom && 'fret-lamp--bloom',
+  ]
     .filter(Boolean)
     .join(' ')
   return (
@@ -170,6 +188,7 @@ export function Key({
   children,
   variant = 'primary',
   inert,
+  pressed,
   lamp,
   className = '',
   ...rest
@@ -177,14 +196,17 @@ export function Key({
   children: ReactNode
   variant?: 'primary' | 'alt'
   inert?: boolean
+  /** Held down for as long as whatever it opened stays open. */
+  pressed?: boolean
   /** Colour of the state lamp carried on the key itself, if any. */
-  lamp?: { color: string; pulse?: boolean }
+  lamp?: { color: string; pulse?: boolean; bloom?: boolean }
   className?: string
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const classes = [
     'fret-key',
     variant === 'alt' && 'fret-key--alt',
     inert && 'fret-key--inert',
+    pressed && 'fret-key--pressed',
     className,
   ]
     .filter(Boolean)
@@ -192,7 +214,7 @@ export function Key({
 
   return (
     <button type="button" className={classes} disabled={inert || rest.disabled} {...rest}>
-      {lamp && <Lamp color={lamp.color} size={7} pulse={lamp.pulse} />}
+      {lamp && <Lamp color={lamp.color} size={7} pulse={lamp.pulse} bloom={lamp.bloom} />}
       <span className="fret-key__label">{children}</span>
     </button>
   )
@@ -261,7 +283,16 @@ export function RestoreTag({
  * retyping — retyping would read as a second link being minted, when what
  * happened is that one link changed its name.
  */
-export function LinkReadout({ host, slug }: { host: string; slug: string }) {
+export function LinkReadout({
+  host,
+  slug,
+  onOpen,
+}: {
+  host: string
+  slug: string
+  /** Makes the readout the way to preview, once there is something to open. */
+  onOpen?: () => void
+}) {
   const [typed, setTyped] = useState(slug)
   const [flash, setFlash] = useState(false)
   const previous = useRef(slug)
@@ -296,14 +327,25 @@ export function LinkReadout({ host, slug }: { host: string; slug: string }) {
     return () => window.clearInterval(tick)
   }, [slug])
 
-  return (
-    <span className="fret-link">
+  const body = (
+    <>
       <span className="fret-link__host">{host}</span>
       {typed !== '' && (
         <span className={`fret-link__slug${flash ? ' fret-link__slug--flash' : ''}`}>
           /{typed}
         </span>
       )}
-    </span>
+    </>
   )
+
+  // The device carries three keys and no more, so previewing lives on the link
+  // itself: the address is already on screen, and a link is a thing you click.
+  if (onOpen && slug !== '' && typed === slug) {
+    return (
+      <button type="button" className="fret-link fret-link--open" onClick={onOpen}>
+        {body}
+      </button>
+    )
+  }
+  return <span className="fret-link">{body}</span>
 }

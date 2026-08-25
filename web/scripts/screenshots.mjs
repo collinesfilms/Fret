@@ -164,34 +164,40 @@ async function captureUploadAndReady() {
 }
 
 /**
- * The restore tag: upload, copy the link (which records the shared name), then
- * rename so the tag has something to offer.
+ * The options tray, out from under the device, with the link field focused so
+ * the consequence of renaming a link that has been sent is showing.
  */
-async function captureRestoreTag() {
+async function captureTray() {
   const { context, page } = await open({ viewport: DESKTOP_TALL })
 
   await page.setInputFiles('input[type=file]', [
-    payload('reel_autumn_v4_prores.mov', 2 << 20),
-    payload('grade_notes.pdf', 128 << 10),
+    payload('reel_autumn_v4_prores.mov', 3 << 20),
+    payload('grade_notes.pdf', 180 << 10),
   ])
   await page.waitForFunction(
     () => document.querySelector('.fret-screen__stripLabel')?.textContent === 'upload complete',
     undefined,
     { timeout: 120_000 },
   )
-  await page.waitForTimeout(900)
+  await page.waitForTimeout(1000)
 
-  // Copying is what records the name worth restoring.
+  // Copying is what makes a rename consequential.
   await page.locator('.fret-actions__primary').click()
+  await page.waitForTimeout(600)
+
+  await page.locator('.fret-actions__secondary').first().click()
+  await page.waitForSelector('.fret-tray--open')
   await page.waitForTimeout(700)
 
-  const link = page.locator('.fret-row__control input').first()
-  await link.fill('autumn-delivery-final')
-  await link.press('Enter')
-  await page.waitForSelector('.fret-tag--out')
-  await page.waitForTimeout(700)
+  const password = page.locator('.fret-tray input[type=password]')
+  await password.fill('listen')
+  await password.press('Enter')
+  await page.waitForTimeout(500)
 
-  await shot(page, 'restore-tag')
+  await page.locator('.fret-tray input').first().focus()
+  await page.waitForTimeout(500)
+
+  await shot(page, 'options-tray')
   await context.close()
 }
 
@@ -273,7 +279,7 @@ async function main() {
   await captureEmpty('light')
   await captureEmpty('dark')
   await captureUploadAndReady()
-  await captureRestoreTag()
+  await captureTray()
   await captureSheet('light')
   await captureSheet('dark')
   await captureSettings()

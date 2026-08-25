@@ -23,6 +23,15 @@
   max-width: 512px;
 }
 
+/* Played once, when an upload lands. */
+.fret-panel--settled {
+  animation: fretSettle 0.62s var(--easeOut) both;
+}
+
+.fret-lamp--bloom {
+  animation: fretBloom 0.7s var(--easeOut) both;
+}
+
 /* ---------- the screen ---------- */
 
 .fret-screen {
@@ -347,6 +356,24 @@
   color: var(--accent);
 }
 
+/*
+ * Held down for as long as the drawer it opened stays out. Same travel a key
+ * takes on :active, except it does not spring back — which is what says the
+ * thing below the device came from this key.
+ */
+.fret-key--pressed,
+.fret-key--pressed:active {
+  transform: translateY(2px);
+  background: var(--pressed);
+  box-shadow: inset 0 2px 5px rgba(35, 33, 31, 0.24), inset 0 -1px 0 rgba(255, 255, 255, 0.4);
+  color: var(--fg);
+}
+
+:root[data-theme='dark'] .fret-key--pressed,
+:root[data-theme='dark'] .fret-key--pressed:active {
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6), inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+}
+
 .fret-actions {
   display: flex;
   gap: 8px;
@@ -581,6 +608,20 @@
      you are about to send, and slugs are lowercase. Show what it really is. */
   text-transform: none;
   letter-spacing: 0.08em;
+}
+
+.fret-link--open {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  transition: opacity var(--durFast) ease;
+}
+
+.fret-link--open:hover {
+  opacity: 0.72;
 }
 
 .fret-link__host {
