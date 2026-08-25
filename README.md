@@ -25,6 +25,8 @@ up for anything.
 - **Drop-first.** Selecting files starts the upload immediately. The interface
   then grows to reveal the transfer's settings while bytes are still moving,
   so nothing has to be decided before the transfer begins.
+- **Nothing to save.** Settings apply as you make them. There is no save
+  button, and no way to lose a change by forgetting to press one.
 - **Straight to storage.** Uploads and single-file downloads go browser ↔ S3
   directly over presigned URLs. The server issues the URLs and never carries
   the bytes, so a 100 GB transfer runs at your storage's own speed.
@@ -83,8 +85,8 @@ no button and no explanatory copy, because there is only one thing to do.
 
 Progress is a rising material rather than a bar, with a bright meniscus at its
 surface. The link, password and expiry are all editable while the transfer is
-still running — and the primary key carries the transfer's state, which is why
-there is no separate status line and no separate save button.
+still running, and nothing needs saving: discrete choices apply on the spot,
+and the text fields commit when you leave them.
 
 <p align="center">
   <img src="docs/screenshots/uploading.png" alt="A transfer mid-upload" width="720">
@@ -98,6 +100,17 @@ have actually landed.
 
 <p align="center">
   <img src="docs/screenshots/ready.png" alt="A completed transfer" width="720">
+</p>
+
+### Renaming a link you already sent
+
+Renaming a live transfer kills the old link — which is the point, since you
+usually rename precisely because it went to the wrong person. But the old name
+is not lost: it stays reserved to that transfer, and a paper tag slides out
+from under the device offering it back.
+
+<p align="center">
+  <img src="docs/screenshots/restore-tag.png" alt="The restore tag" width="720">
 </p>
 
 ### Your transfers

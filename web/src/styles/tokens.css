@@ -31,6 +31,16 @@
   --accent: #cf3f28;
   --ok: #3d8f57;
 
+  /*
+   * The restore tag's material. Warm kraft rather than a warning yellow: a
+   * previous name being on file is not an alert, and the palette deliberately
+   * carries only two semantic colours.
+   */
+  --tag: #dcb87d;
+  --tagEdge: #c9a165;
+  --tagFg: #4a3a22;
+  --tagDim: #7d6743;
+
   --key: linear-gradient(180deg, #fffefb 0%, #ece9e3 100%);
   --keyAlt: linear-gradient(180deg, #f0eee9 0%, #dfdbd4 100%);
   --keyShadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 2px 0 var(--edge2),
@@ -68,6 +78,11 @@
 
   --accent: #e2503a;
   --ok: #5cb478;
+
+  --tag: #7a6034;
+  --tagEdge: #5d4826;
+  --tagFg: #f2e4c9;
+  --tagDim: #c3ab82;
 
   --key: linear-gradient(180deg, #3b3934 0%, #2a2825 100%);
   --keyAlt: linear-gradient(180deg, #302e2b 0%, #221f1d 100%);

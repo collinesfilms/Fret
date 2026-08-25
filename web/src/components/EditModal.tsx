@@ -16,12 +16,21 @@ import { Key } from './Device'
 interface EditModalProps {
   transfer: TransferSummary
   locale: Locale
+  /** True while the transfers sheet is open beside it, on desktop. */
+  besideSheet?: boolean
   onClose: () => void
   onSaved: () => void
   onDeleted: () => void
 }
 
-export function EditModal({ transfer, locale, onClose, onSaved, onDeleted }: EditModalProps) {
+export function EditModal({
+  transfer,
+  locale,
+  besideSheet,
+  onClose,
+  onSaved,
+  onDeleted,
+}: EditModalProps) {
   const [slug, setSlug] = useState(transfer.slug)
   // A stored password is never sent back, so the field starts empty and only
   // means something if the user types in it.
@@ -97,7 +106,12 @@ export function EditModal({ transfer, locale, onClose, onSaved, onDeleted }: Edi
   return (
     <>
       <div className="fret-scrim fret-scrim--on fret-scrim--strong" onClick={onClose} />
-      <div className="fret-modal" role="dialog" aria-modal="true" aria-label={t('edit.title')}>
+      <div
+        className={`fret-modal${besideSheet ? ' fret-modal--beside-sheet' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('edit.title')}
+      >
         <div className="fret-modal__head">
           <div>
             <div className="fret-modal__title">{t('edit.title')}</div>
@@ -126,6 +140,31 @@ export function EditModal({ transfer, locale, onClose, onSaved, onDeleted }: Edi
                 setSlugError(null)
               }}
             />
+            {/*
+              Renaming here has the same consequence as renaming on the device,
+              so it carries the same offer — inline rather than as a tag, since
+              a modal has no base to tuck one into.
+            */}
+            {transfer.sharedSlug !== '' && transfer.sharedSlug !== slug && (
+              <div className="fret-modal__restore">
+                <div className="fret-modal__restoreText">
+                  <span className="fret-modal__restoreSlug">
+                    {t('tag.sharedAs')} {transfer.sharedSlug}
+                  </span>
+                  <span className="fret-modal__restoreNote">{t('tag.note')}</span>
+                </div>
+                <button
+                  type="button"
+                  className="fret-modal__restoreButton"
+                  onClick={() => {
+                    setSlug(transfer.sharedSlug)
+                    setSlugError(null)
+                  }}
+                >
+                  {t('tag.restore')}
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="fret-modal__field">

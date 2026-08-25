@@ -682,3 +682,83 @@ func TestHostOf(t *testing.T) {
 		}
 	}
 }
+
+// TestSharedSlugStaysReserved covers the restore tag's guarantee: once a link
+// has been handed out under a name, renaming must not let that name get away,
+// or the offer to restore it would sometimes fail.
+func TestSharedSlugStaysReserved(t *testing.T) {
+	h := newHarness(t)
+	transfer := h.completeTransfer(t)
+	original := transfer.Slug
+
+	// Nothing is recorded until the link is actually copied.
+	_, before := h.do(http.MethodGet, "/api/transfers/"+transfer.ID, nil)
+	if !bytes.Contains(before, []byte(`"sharedSlug":""`)) {
+		t.Errorf("an uncopied transfer should have no shared slug: %s", before)
+	}
+
+	resp, body := h.do(http.MethodPost, "/api/transfers/"+transfer.ID+"/shared", nil)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("marking shared: %d %s", resp.StatusCode, body)
+	}
+	if !bytes.Contains(body, []byte(`"sharedSlug":"`+original+`"`)) {
+		t.Fatalf("shared slug was not recorded: %s", body)
+	}
+
+	// Rename away from it.
+	if resp, body := h.do(http.MethodPatch, "/api/transfers/"+transfer.ID,
+		map[string]any{"slug": "renamed-once"}); resp.StatusCode != http.StatusOK {
+		t.Fatalf("renaming: %d %s", resp.StatusCode, body)
+	}
+	// The old name must stop resolving — renaming exists to kill a link you
+	// sent to the wrong person.
+	if gone, _ := h.public(http.MethodGet, "/api/t/"+original, nil); gone.StatusCode != http.StatusNotFound {
+		t.Errorf("the old link still resolves with %d", gone.StatusCode)
+	}
+
+	// And no one else may take it while this transfer can still restore it.
+	other := h.completeTransfer(t)
+	steal, stealBody := h.do(http.MethodPatch, "/api/transfers/"+other.ID, map[string]any{"slug": original})
+	if steal.StatusCode != http.StatusConflict {
+		t.Errorf("another transfer claimed a reserved shared slug: %d %s", steal.StatusCode, stealBody)
+	}
+
+	// Restoring works.
+	restore, restoreBody := h.do(http.MethodPatch, "/api/transfers/"+transfer.ID, map[string]any{"slug": original})
+	if restore.StatusCode != http.StatusOK {
+		t.Fatalf("restoring the shared slug failed: %d %s", restore.StatusCode, restoreBody)
+	}
+	if back, _ := h.public(http.MethodGet, "/api/t/"+original, nil); back.StatusCode != http.StatusOK {
+		t.Errorf("the restored link does not resolve: %d", back.StatusCode)
+	}
+}
+
+// TestSharedSlugIsWrittenOnce keeps the restore anchor pointing at the name
+// people actually received.
+func TestSharedSlugIsWrittenOnce(t *testing.T) {
+	h := newHarness(t)
+	transfer := h.completeTransfer(t)
+	original := transfer.Slug
+
+	h.do(http.MethodPost, "/api/transfers/"+transfer.ID+"/shared", nil)
+	h.do(http.MethodPatch, "/api/transfers/"+transfer.ID, map[string]any{"slug": "second-name"})
+	// Copying again after a rename must not move the anchor.
+	_, body := h.do(http.MethodPost, "/api/transfers/"+transfer.ID+"/shared", nil)
+
+	if !bytes.Contains(body, []byte(`"sharedSlug":"`+original+`"`)) {
+		t.Errorf("the shared slug moved after a rename: %s", body)
+	}
+}
+
+// A transfer must still be allowed to keep its own name.
+func TestTransferCanKeepItsOwnSlug(t *testing.T) {
+	h := newHarness(t)
+	transfer := h.completeTransfer(t)
+	h.do(http.MethodPost, "/api/transfers/"+transfer.ID+"/shared", nil)
+
+	resp, body := h.do(http.MethodPatch, "/api/transfers/"+transfer.ID,
+		map[string]any{"slug": transfer.Slug, "expiry": "30d"})
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("a transfer was blocked by its own reservation: %d %s", resp.StatusCode, body)
+	}
+}

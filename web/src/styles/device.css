@@ -389,3 +389,124 @@
   background: rgba(255, 255, 255, 0.1);
   color: var(--screenFg);
 }
+
+/*
+ * The restore tag.
+ *
+ * A paper tag tucked into the base of the device, sliding down out of it.
+ *
+ * The tag and the panel are siblings inside the deck rather than parent and
+ * child. A negative z-index child would not do: within a stacking context a
+ * negative child paints *above* its parent's own background, so the tag would
+ * sit on the panel rather than under it. As siblings, plain stack order does
+ * exactly what it looks like.
+ */
+.fret-deck {
+  position: relative;
+  width: 100%;
+  max-width: 568px;
+}
+
+.fret-deck .fret-panel {
+  max-width: none;
+}
+
+.fret-panel {
+  position: relative;
+  z-index: 2;
+}
+
+.fret-tag {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  top: 100%;
+  z-index: 1;
+  background: var(--tag);
+  border: 1px solid var(--tagEdge);
+  border-top: none;
+  border-radius: 0 0 13px 13px;
+  /* Sits entirely behind the panel until it is called for. */
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.42s cubic-bezier(0.4, 1.2, 0.5, 1), opacity 0.24s ease;
+}
+
+.fret-tag--out {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.fret-tag__inner {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 14px 12px;
+  flex-wrap: wrap;
+}
+
+.fret-tag__label {
+  font-family: var(--mono);
+  font-size: 7.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--tagDim);
+  flex-shrink: 0;
+}
+
+.fret-tag__slug {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--tagFg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.fret-tag__note {
+  font-family: var(--mono);
+  font-size: 7.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tagDim);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Flat, like every other control that is not a key. */
+.fret-tag__restore {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--tagEdge);
+  border-radius: 8px;
+  padding: 7px 11px;
+  font-family: var(--mono);
+  font-size: 7.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--tagFg);
+  cursor: pointer;
+  transition: background 0.16s ease;
+}
+
+.fret-tag__restore:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+:root[data-theme='dark'] .fret-tag__restore:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+@media (max-width: 520px) {
+  /* The note is the first thing to go when there is no room for it. */
+  .fret-tag__note {
+    display: none;
+  }
+}

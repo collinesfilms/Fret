@@ -134,11 +134,11 @@ func (d *DB) CreateTransfer(ctx context.Context, t *Transfer, files []File) erro
 	})
 }
 
-const transferCols = `id, user_id, slug, status, password_hash, expiry, expires_at, total_bytes, downloads, created_at, completed_at, updated_at`
+const transferCols = `id, user_id, slug, shared_slug, status, password_hash, expiry, expires_at, total_bytes, downloads, created_at, completed_at, updated_at`
 
 func scanTransfer(row interface{ Scan(...any) error }) (*Transfer, error) {
 	var t Transfer
-	err := row.Scan(&t.ID, &t.UserID, &t.Slug, &t.Status, &t.PasswordHash, &t.Expiry, &t.ExpiresAt,
+	err := row.Scan(&t.ID, &t.UserID, &t.Slug, &t.SharedSlug, &t.Status, &t.PasswordHash, &t.Expiry, &t.ExpiresAt,
 		&t.TotalBytes, &t.Downloads, &t.CreatedAt, &t.CompletedAt, &t.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
@@ -160,10 +160,27 @@ func (d *DB) TransferBySlug(ctx context.Context, slug string) (*Transfer, error)
 	return scanTransfer(d.QueryRowContext(ctx, `SELECT `+transferCols+` FROM transfers WHERE slug = ? COLLATE NOCASE AND status = 'live'`, slug))
 }
 
-func (d *DB) SlugExists(ctx context.Context, slug string) (bool, error) {
+// SlugExists reports whether a name is spoken for. A transfer holds both the
+// name it currently answers to and the one it was shared under, so a link that
+// was handed out can always be restored rather than lost to someone else.
+func (d *DB) SlugExists(ctx context.Context, slug, excludeTransferID string) (bool, error) {
 	var n int
-	err := d.QueryRowContext(ctx, `SELECT COUNT(*) FROM transfers WHERE slug = ? COLLATE NOCASE AND status != 'deleted'`, slug).Scan(&n)
+	err := d.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM transfers
+		WHERE id != ?
+		  AND status != 'deleted'
+		  AND (slug = ? COLLATE NOCASE OR shared_slug = ? COLLATE NOCASE)`,
+		excludeTransferID, slug, slug).Scan(&n)
 	return n > 0, err
+}
+
+// MarkShared records the name a link was first handed out under. It is written
+// once: a later rename must not move the anchor it can be restored to.
+func (d *DB) MarkShared(ctx context.Context, id string) error {
+	_, err := d.ExecContext(ctx, `
+		UPDATE transfers SET shared_slug = slug
+		WHERE id = ? AND shared_slug = '' AND status = 'live'`, id)
+	return err
 }
 
 // ListTransfers returns a user's transfers, newest first, for the sheet.
@@ -182,7 +199,7 @@ func (d *DB) ListTransfers(ctx context.Context, userID int64) ([]Transfer, error
 	var out []Transfer
 	for rows.Next() {
 		var t Transfer
-		if err := rows.Scan(&t.ID, &t.UserID, &t.Slug, &t.Status, &t.PasswordHash, &t.Expiry, &t.ExpiresAt,
+		if err := rows.Scan(&t.ID, &t.UserID, &t.Slug, &t.SharedSlug, &t.Status, &t.PasswordHash, &t.Expiry, &t.ExpiresAt,
 			&t.TotalBytes, &t.Downloads, &t.CreatedAt, &t.CompletedAt, &t.UpdatedAt, &t.FileCount); err != nil {
 			return nil, err
 		}

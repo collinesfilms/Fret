@@ -1,16 +1,20 @@
 /**
  * The core screen: drop, upload, adjust, share.
  *
- * Two behaviours here are the product rather than decoration. Dropping files
- * starts the upload immediately and the device grows into its settings while
- * bytes are still moving — settings are configured during transit, not before.
- * And the primary key carries the transfer's whole state, which is why there
- * is no separate status line and no separate save button.
+ * Dropping files starts the upload immediately and the device grows into its
+ * settings while bytes are still moving — settings are configured during
+ * transit, not before.
+ *
+ * Nothing here is saved explicitly. Discrete choices commit the moment they
+ * are made; the text fields commit when you leave them, or on Enter. Doing it
+ * per keystroke would be wrong rather than merely chatty: each intermediate
+ * slug is a real reservation, and a half-typed password would genuinely be the
+ * transfer's password for as long as it took to finish typing.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Field, Grow, Segmented, SettingsRow } from '../components/Controls'
-import { Key, Panel, Screen, Strip, Vent } from '../components/Device'
+import { Key, Panel, RestoreTag, Screen, Strip, Vent } from '../components/Device'
 import { api, ApiError, type Expiry, type Me, type Resumable, type Transfer } from '../lib/api'
 import { filterSlug, formatBytes, rate, remaining, splitBytes } from '../lib/format'
 import { fileCount, translate, type Locale, type StringKey } from '../lib/i18n'
@@ -18,15 +22,14 @@ import { CancelledError, matchResumable, readDrop, Upload, type UploadProgress }
 
 type Phase = 'empty' | 'uploading' | 'ready' | 'failed'
 
-/** How long the saved and copied confirmations hold before reverting. */
-const SAVED_FLASH_MS = 2600
-const COPIED_FLASH_MS = 1800
-
 interface Settings {
   slug: string
   password: string
   expiry: Expiry
 }
+
+/** How long the copied confirmation holds before reverting. */
+const COPIED_FLASH_MS = 1800
 
 export function TransferScreen({
   me,
@@ -46,20 +49,18 @@ export function TransferScreen({
   const [draining, setDraining] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // `settings` is what the fields show; `committed` is what the server holds.
+  // They differ only between a keystroke and the blur that commits it.
   const [settings, setSettings] = useState<Settings>({ slug: '', password: '', expiry: '7d' })
-  const [saved, setSaved] = useState<Settings>({ slug: '', password: '', expiry: '7d' })
-  const [shared, setShared] = useState(false)
-  const [savedFlash, setSavedFlash] = useState(false)
+  const [committed, setCommitted] = useState<Settings>({ slug: '', password: '', expiry: '7d' })
   const [copied, setCopied] = useState(false)
   const [slugError, setSlugError] = useState<string | null>(null)
-  const [savingSettings, setSavingSettings] = useState(false)
 
   const [resumable, setResumable] = useState<Resumable | null>(null)
   const [awaitingResume, setAwaitingResume] = useState(false)
 
   const uploadRef = useRef<Upload | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const flashTimer = useRef<number | undefined>(undefined)
   const copyTimer = useRef<number | undefined>(undefined)
 
   const t = useCallback(
@@ -69,7 +70,6 @@ export function TransferScreen({
 
   useEffect(() => {
     return () => {
-      window.clearTimeout(flashTimer.current)
       window.clearTimeout(copyTimer.current)
       uploadRef.current?.cancel()
     }
@@ -85,11 +85,6 @@ export function TransferScreen({
       .catch(() => setResumable(null))
   }, [])
 
-  const dirty =
-    settings.slug !== saved.slug ||
-    settings.password !== saved.password ||
-    settings.expiry !== saved.expiry
-
   const startUpload = useCallback(
     async (picked: File[], resume?: Resumable) => {
       if (picked.length === 0) return
@@ -97,8 +92,6 @@ export function TransferScreen({
       setSlugError(null)
       setDraining(false)
       setCopied(false)
-      setSavedFlash(false)
-      setShared(false)
 
       let created: Transfer
       let byFileId: Map<string, File>
@@ -133,7 +126,7 @@ export function TransferScreen({
       setAwaitingResume(false)
       const initial: Settings = { slug: created.slug, password: '', expiry: created.expiry }
       setSettings(initial)
-      setSaved(initial)
+      setCommitted(initial)
       setPhase('uploading')
       setProgress({
         uploaded: 0,
@@ -210,9 +203,7 @@ export function TransferScreen({
     setDraining(false)
     setError(null)
     setSlugError(null)
-    setShared(false)
     setCopied(false)
-    setSavedFlash(false)
     if (inputRef.current) inputRef.current.value = ''
     onTransfersChanged()
   }
@@ -222,49 +213,86 @@ export function TransferScreen({
   const copyLink = async () => {
     if (!transfer) return
     try {
-      await navigator.clipboard.writeText(linkFor(saved.slug))
+      await navigator.clipboard.writeText(linkFor(committed.slug))
     } catch {
       // Clipboard access can be refused; the link is on screen either way.
     }
-    setShared(true)
     setCopied(true)
     window.clearTimeout(copyTimer.current)
     copyTimer.current = window.setTimeout(() => setCopied(false), COPIED_FLASH_MS)
+
+    // Copying is what makes a link shared, so it is the moment the name worth
+    // restoring gets recorded.
+    try {
+      setTransfer(await api.markShared(transfer.id))
+      onTransfersChanged()
+    } catch {
+      // Only costs the restore tag; the link on the clipboard is unaffected.
+    }
   }
 
-  const saveSettings = async () => {
-    if (!transfer || savingSettings) return
-    setSavingSettings(true)
-    setSlugError(null)
-    try {
-      const updated = await api.updateTransfer(transfer.id, {
-        slug: settings.slug !== saved.slug ? settings.slug : undefined,
-        password: settings.password !== saved.password ? settings.password : undefined,
-        expiry: settings.expiry !== saved.expiry ? settings.expiry : undefined,
-      })
-      setTransfer(updated)
-      setSaved({ ...settings })
-      setSavedFlash(true)
-      window.clearTimeout(flashTimer.current)
-      flashTimer.current = window.setTimeout(() => setSavedFlash(false), SAVED_FLASH_MS)
-      onTransfersChanged()
-    } catch (err) {
-      if (err instanceof ApiError && err.code === 'slug_taken') setSlugError(t('error.slugTaken'))
-      else if (err instanceof ApiError && err.code === 'slug_invalid')
-        setSlugError(t('error.slugInvalid'))
-      else setError(err instanceof Error ? err.message : t('error.generic'))
-    } finally {
-      setSavingSettings(false)
-    }
+  /**
+   * Commits a change to the server.
+   *
+   * Discrete controls call this as they are clicked. Text fields call it when
+   * they are left, which is late enough that a half-typed slug is never
+   * reserved and a half-typed password is never the real one.
+   */
+  const commit = useCallback(
+    async (patch: Partial<Settings>) => {
+      if (!transfer) return
+      const next = { ...committed, ...patch }
+      if (
+        next.slug === committed.slug &&
+        next.password === committed.password &&
+        next.expiry === committed.expiry
+      ) {
+        return
+      }
+      setSlugError(null)
+      try {
+        const updated = await api.updateTransfer(transfer.id, {
+          slug: next.slug !== committed.slug ? next.slug : undefined,
+          password: next.password !== committed.password ? next.password : undefined,
+          expiry: next.expiry !== committed.expiry ? next.expiry : undefined,
+        })
+        setTransfer(updated)
+        setCommitted({ slug: updated.slug, password: next.password, expiry: updated.expiry })
+        setSettings((current) => ({ ...current, slug: updated.slug, expiry: updated.expiry }))
+        onTransfersChanged()
+      } catch (err) {
+        // A rejected value snaps the field back to what the server holds,
+        // rather than leaving the interface claiming something untrue.
+        if (err instanceof ApiError && err.code === 'slug_taken') {
+          setSlugError(t('error.slugTaken'))
+          setSettings((current) => ({ ...current, slug: committed.slug }))
+        } else if (err instanceof ApiError && err.code === 'slug_invalid') {
+          setSlugError(t('error.slugInvalid'))
+          setSettings((current) => ({ ...current, slug: committed.slug }))
+        } else {
+          setError(err instanceof Error ? err.message : t('error.generic'))
+        }
+      }
+    },
+    [transfer, committed, onTransfersChanged, t],
+  )
+
+  /** Puts the link back to the name it was handed out under. */
+  const restoreSharedSlug = () => {
+    const shared = transfer?.sharedSlug
+    if (!shared) return
+    setSettings((current) => ({ ...current, slug: shared }))
+    commit({ slug: shared })
   }
 
   const uploading = phase === 'uploading'
   const percent = Math.floor(progress?.percent ?? 0)
 
   /*
-   * The primary key's state table. `dirty` and `shared` together decide the
-   * label and the action, which is why the pair is tracked rather than a
-   * single status enum.
+   * The key does one job now: copy the link. It cannot do it while the upload
+   * is running, because the link does not resolve until the transfer goes
+   * live — and the screen above already reports the progress, so the key says
+   * only why it is waiting.
    */
   const keyState = (() => {
     if (phase === 'failed') {
@@ -278,28 +306,14 @@ export function TransferScreen({
     }
     if (uploading) {
       return {
-        label: t('key.uploading', { percent }),
+        label: t('key.waiting'),
         lamp: { color: 'var(--accent)', pulse: true },
         inert: true,
         action: () => undefined,
       }
     }
-    if (dirty) {
-      return {
-        label: shared ? t('key.update') : t('key.save'),
-        lamp: { color: 'var(--accent)', pulse: true },
-        inert: savingSettings,
-        action: saveSettings,
-      }
-    }
-    if (savedFlash) {
-      return { label: t('key.saved'), lamp: { color: 'var(--ok)' }, inert: false, action: copyLink }
-    }
-    if (copied) {
-      return { label: t('key.copied'), lamp: { color: 'var(--ok)' }, inert: false, action: copyLink }
-    }
     return {
-      label: shared ? t('key.live') : t('key.copy'),
+      label: copied ? t('key.copied') : t('key.copy'),
       lamp: { color: 'var(--ok)' },
       inert: false,
       action: copyLink,
@@ -319,8 +333,10 @@ export function TransferScreen({
         onChange={(e) => onPick(e.target.files)}
       />
 
-      <Panel>
-        <Screen
+      {/* The tag is a sibling of the panel so it can pass behind it. */}
+      <div className="fret-deck">
+        <Panel>
+          <Screen
           dragging={dragging}
           fill={phase === 'empty' ? 0 : draining ? 0 : percent}
           draining={draining}
@@ -388,7 +404,7 @@ export function TransferScreen({
                       : t('app.complete')
                 }
                 pulse={uploading}
-                right={saved.slug}
+                right={committed.slug}
               />
 
               <div className="fret-filelist">
@@ -441,6 +457,7 @@ export function TransferScreen({
         <Grow open={phase !== 'empty'}>
           <Vent />
           <div className="fret-settings">
+            {/* Text fields commit when you leave them, or on Enter. */}
             <SettingsRow label={t('settings.link')}>
               <Field
                 value={settings.slug}
@@ -448,6 +465,11 @@ export function TransferScreen({
                 onChange={(e) => {
                   setSettings({ ...settings, slug: filterSlug(e.target.value) })
                   setSlugError(null)
+                }}
+                onBlur={() => commit({ slug: settings.slug })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur()
+                  if (e.key === 'Escape') setSettings({ ...settings, slug: committed.slug })
                 }}
                 aria-label={t('settings.link')}
               />
@@ -459,14 +481,22 @@ export function TransferScreen({
                 value={settings.password}
                 placeholder={t('settings.passwordNone')}
                 onChange={(e) => setSettings({ ...settings, password: e.target.value })}
+                onBlur={() => commit({ password: settings.password })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur()
+                }}
                 aria-label={t('settings.password')}
               />
             </SettingsRow>
 
+            {/* A discrete choice has no half-made state, so it commits at once. */}
             <SettingsRow label={t('settings.expires')}>
               <Segmented<Expiry>
                 value={settings.expiry}
-                onChange={(expiry) => setSettings({ ...settings, expiry })}
+                onChange={(expiry) => {
+                  setSettings({ ...settings, expiry })
+                  commit({ expiry })
+                }}
                 label={t('settings.expires')}
                 segments={[
                   { value: '24h', label: '24h' },
@@ -490,7 +520,7 @@ export function TransferScreen({
             <Key
               variant="alt"
               className="fret-actions__secondary"
-              onClick={() => onOpenRecipient(saved.slug)}
+              onClick={() => onOpenRecipient(committed.slug)}
               /* Nothing to preview until the transfer is actually live. */
               inert={uploading}
             >
@@ -501,7 +531,15 @@ export function TransferScreen({
             </Key>
           </div>
         </Grow>
-      </Panel>
+        </Panel>
+
+        <RestoreTag
+          slug={transfer?.sharedSlug ?? ''}
+          current={committed.slug}
+          locale={locale}
+          onRestore={restoreSharedSlug}
+        />
+      </div>
     </div>
   )
 }

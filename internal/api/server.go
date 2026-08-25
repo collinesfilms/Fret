@@ -80,6 +80,7 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("POST /api/transfers/{id}/files/{fileID}/parts", s.authed(s.handleRecordPart))
 	mux.Handle("POST /api/transfers/{id}/files/{fileID}/complete", s.authed(s.handleCompleteFile))
 	mux.Handle("POST /api/transfers/{id}/finalize", s.authed(s.handleFinalize))
+	mux.Handle("POST /api/transfers/{id}/shared", s.authed(s.handleMarkShared))
 	mux.Handle("GET /api/admin/stats", s.authed(s.handleAdminStats))
 
 	// The public recipient side. No session, no account.

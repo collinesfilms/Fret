@@ -9,6 +9,16 @@ import { formatBytes, pad2 } from '../lib/format'
 import { counted, translate, type Locale, type StringKey } from '../lib/i18n'
 import { Segmented } from './Controls'
 
+/** The offered slug lengths. Six is still unguessable; twelve is belt-and-braces. */
+const SLUG_LENGTHS = [6, 8, 10, 12]
+
+/** Maps a stored length onto the nearest preset, so an older value still shows. */
+function nearestLength(length: number): number {
+  return SLUG_LENGTHS.reduce((best, n) =>
+    Math.abs(n - length) < Math.abs(best - length) ? n : best,
+  )
+}
+
 interface TopBarProps {
   me: Me
   locale: Locale
@@ -200,23 +210,20 @@ function SettingsPopover({
             { value: 'words', label: t('prefs.slugWords') },
           ]}
         />
-        {/* Length only means something for the code style. */}
+        {/*
+          Length only means something for the code style. Presets rather than a
+          slider: a range input was the one stock control in an interface built
+          entirely from its own parts, and nobody needs eleven characters.
+        */}
         {me.user.slugStyle === 'code' && (
-          <div className="fret-popover__row" style={{ borderTop: 'none', paddingBottom: 0 }}>
-            <span className="fret-popover__label">{t('prefs.slugLength')}</span>
-            <input
-              type="range"
-              min={4}
-              max={16}
-              step={1}
-              value={me.user.slugLength}
-              onChange={(e) => save({ slugLength: Number(e.target.value) })}
-              style={{ flex: 1, accentColor: 'var(--fg2)' }}
-              aria-label={t('prefs.slugLength')}
+          <div style={{ marginTop: 9 }}>
+            <div className="fret-popover__stackLabel">{t('prefs.slugLength')}</div>
+            <Segmented<string>
+              value={String(nearestLength(me.user.slugLength))}
+              onChange={(value) => save({ slugLength: Number(value) })}
+              label={t('prefs.slugLength')}
+              segments={SLUG_LENGTHS.map((n) => ({ value: String(n), label: String(n) }))}
             />
-            <span className="fret-popover__value" style={{ marginLeft: 0, minWidth: 18 }}>
-              {me.user.slugLength}
-            </span>
           </div>
         )}
       </div>

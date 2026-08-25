@@ -65,6 +65,7 @@ type Transfer struct {
 	ID           string `json:"id"`
 	UserID       int64  `json:"-"`
 	Slug         string `json:"slug"`
+	SharedSlug   string `json:"sharedSlug"`
 	Status       string `json:"status"`
 	PasswordHash string `json:"-"`
 	HasPassword  bool   `json:"hasPassword"`

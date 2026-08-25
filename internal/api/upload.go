@@ -33,17 +33,18 @@ type createTransferRequest struct {
 }
 
 type transferResponse struct {
-	ID        string           `json:"id"`
-	Slug      string           `json:"slug"`
-	Status    string           `json:"status"`
-	Expiry    string           `json:"expiry"`
-	ExpiresAt *int64           `json:"expiresAt"`
-	Total     int64            `json:"totalBytes"`
-	Files     []fileResponse   `json:"files"`
-	Password  bool             `json:"hasPassword"`
-	Downloads int64            `json:"downloads"`
-	CreatedAt int64            `json:"createdAt"`
-	Uploaded  map[string]int64 `json:"uploadedBytes,omitempty"`
+	ID         string           `json:"id"`
+	Slug       string           `json:"slug"`
+	SharedSlug string           `json:"sharedSlug"`
+	Status     string           `json:"status"`
+	Expiry     string           `json:"expiry"`
+	ExpiresAt  *int64           `json:"expiresAt"`
+	Total      int64            `json:"totalBytes"`
+	Files      []fileResponse   `json:"files"`
+	Password   bool             `json:"hasPassword"`
+	Downloads  int64            `json:"downloads"`
+	CreatedAt  int64            `json:"createdAt"`
+	Uploaded   map[string]int64 `json:"uploadedBytes,omitempty"`
 }
 
 type fileResponse struct {

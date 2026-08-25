@@ -35,6 +35,8 @@ export interface TransferFile {
 export interface Transfer {
   id: string
   slug: string
+  /** The name the link was first copied under; '' until it has been. */
+  sharedSlug: string
   status: 'pending' | 'live'
   expiry: Expiry
   expiresAt: number | null
@@ -48,6 +50,7 @@ export interface Transfer {
 export interface TransferSummary {
   id: string
   slug: string
+  sharedSlug: string
   fileCount: number
   totalBytes: number
   downloads: number
@@ -200,6 +203,9 @@ export const api = {
     request<{ ok: boolean }>(`/api/transfers/${id}/files/${fileId}/complete`, { method: 'POST' }),
 
   finalize: (id: string) => request<Transfer>(`/api/transfers/${id}/finalize`, { method: 'POST' }),
+
+  /** Records the name this link was handed out under. */
+  markShared: (id: string) => request<Transfer>(`/api/transfers/${id}/shared`, { method: 'POST' }),
 
   resumable: () => request<{ transfers: Resumable[] }>('/api/transfers/resumable'),
 

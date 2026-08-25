@@ -141,6 +141,38 @@ async function captureUploadAndReady() {
   await context.close()
 }
 
+/**
+ * The restore tag: upload, copy the link (which records the shared name), then
+ * rename so the tag has something to offer.
+ */
+async function captureRestoreTag() {
+  const { context, page } = await open({ viewport: DESKTOP_TALL })
+
+  await page.setInputFiles('input[type=file]', [
+    payload('reel_autumn_v4_prores.mov', 2 << 20),
+    payload('grade_notes.pdf', 128 << 10),
+  ])
+  await page.waitForFunction(
+    () => document.querySelector('.fret-screen__stripLabel')?.textContent === 'upload complete',
+    undefined,
+    { timeout: 120_000 },
+  )
+  await page.waitForTimeout(900)
+
+  // Copying is what records the name worth restoring.
+  await page.locator('.fret-actions__primary').click()
+  await page.waitForTimeout(700)
+
+  const link = page.locator('.fret-row__control input').first()
+  await link.fill('autumn-delivery-final')
+  await link.press('Enter')
+  await page.waitForSelector('.fret-tag--out')
+  await page.waitForTimeout(700)
+
+  await shot(page, 'restore-tag')
+  await context.close()
+}
+
 async function captureSheet(theme) {
   const { context, page } = await open({ viewport: DESKTOP_TALL, theme })
   await page.click('.fret-pill')
@@ -219,6 +251,7 @@ async function main() {
   await captureEmpty('light')
   await captureEmpty('dark')
   await captureUploadAndReady()
+  await captureRestoreTag()
   await captureSheet('light')
   await captureSheet('dark')
   await captureSettings()

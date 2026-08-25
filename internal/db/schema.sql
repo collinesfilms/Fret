@@ -36,6 +36,10 @@ CREATE TABLE IF NOT EXISTS transfers (
     slug           TEXT NOT NULL UNIQUE COLLATE NOCASE,
     status         TEXT NOT NULL DEFAULT 'pending',  -- pending | live | deleted
     password_hash  TEXT NOT NULL DEFAULT '',         -- argon2id, '' = open
+    -- The slug the link was first copied under, recorded once and never
+    -- overwritten. It is what the restore tag offers, and slug uniqueness
+    -- consults it too, so the name stays reserved and restoring always works.
+    shared_slug    TEXT NOT NULL DEFAULT '' COLLATE NOCASE,
     -- Both forms of the expiry are kept: the timestamp drives the sweeper,
     -- the symbol drives which segment the edit control shows as selected.
     expiry         TEXT NOT NULL DEFAULT '7d',       -- 24h | 7d | 30d | never

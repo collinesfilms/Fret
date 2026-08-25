@@ -36,6 +36,7 @@ func (s *Server) handleListTransfers(w http.ResponseWriter, r *http.Request, u *
 type transferSummary struct {
 	ID          string `json:"id"`
 	Slug        string `json:"slug"`
+	SharedSlug  string `json:"sharedSlug"`
 	FileCount   int    `json:"fileCount"`
 	TotalBytes  int64  `json:"totalBytes"`
 	Downloads   int64  `json:"downloads"`
@@ -47,7 +48,7 @@ type transferSummary struct {
 
 func summarize(t *db.Transfer) transferSummary {
 	return transferSummary{
-		ID: t.ID, Slug: t.Slug, FileCount: t.FileCount,
+		ID: t.ID, Slug: t.Slug, SharedSlug: t.SharedSlug, FileCount: t.FileCount,
 		TotalBytes: t.TotalBytes, Downloads: t.Downloads,
 		HasPassword: t.HasPassword, Expiry: t.Expiry,
 		ExpiresAt: t.ExpiresAt, CreatedAt: t.CreatedAt,
@@ -69,7 +70,7 @@ func (s *Server) handleGetTransfer(w http.ResponseWriter, r *http.Request, u *db
 
 func (s *Server) transferPayload(_ context.Context, t *db.Transfer, files []db.File) transferResponse {
 	out := transferResponse{
-		ID: t.ID, Slug: t.Slug, Status: t.Status,
+		ID: t.ID, Slug: t.Slug, SharedSlug: t.SharedSlug, Status: t.Status,
 		Expiry: t.Expiry, ExpiresAt: t.ExpiresAt,
 		Total: t.TotalBytes, Password: t.HasPassword,
 		Downloads: t.Downloads, CreatedAt: t.CreatedAt,
@@ -112,7 +113,7 @@ func (s *Server) handleUpdateTransfer(w http.ResponseWriter, r *http.Request, u 
 			return
 		}
 		if candidate != transfer.Slug {
-			taken, err := s.db.SlugExists(r.Context(), candidate)
+			taken, err := s.db.SlugExists(r.Context(), candidate, transfer.ID)
 			if err != nil {
 				fail(w, http.StatusInternalServerError, "could not check that link")
 				return
@@ -202,6 +203,30 @@ func (s *Server) purge(ctx context.Context, t *db.Transfer) error {
 		return err
 	}
 	return s.db.DeleteTransfer(ctx, t.ID)
+}
+
+// handleMarkShared records the name the link was first copied under.
+//
+// Copying happens in the browser, so the client reports it. Writing it once is
+// what lets a rename be undone: the old name stays reserved to this transfer
+// and nothing else can claim it.
+func (s *Server) handleMarkShared(w http.ResponseWriter, r *http.Request, u *db.User) {
+	transfer, ok := s.ownedTransfer(w, r, u)
+	if !ok {
+		return
+	}
+	if err := s.db.MarkShared(r.Context(), transfer.ID); err != nil {
+		s.log.Error("marking transfer shared", "error", err)
+		fail(w, http.StatusInternalServerError, "could not record that")
+		return
+	}
+	fresh, err := s.db.TransferByID(r.Context(), transfer.ID)
+	if err != nil {
+		fail(w, http.StatusInternalServerError, "could not record that")
+		return
+	}
+	files, _ := s.db.FilesFor(r.Context(), transfer.ID)
+	send(w, http.StatusOK, s.transferPayload(r.Context(), fresh, files))
 }
 
 func (s *Server) handleAdminStats(w http.ResponseWriter, r *http.Request, u *db.User) {

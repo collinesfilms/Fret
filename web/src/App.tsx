@@ -25,6 +25,13 @@ export function App() {
   const [storageUsed, setStorageUsed] = useState(0)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<TransferSummary | null>(null)
+  /*
+   * On a phone the modal replaces the sheet rather than stacking on it, and
+   * the sheet comes back when the modal closes. Two stacked sheets never feel
+   * like anything but a mistake.
+   */
+  const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 640px)').matches)
+  const [sheetWasOpen, setSheetWasOpen] = useState(false)
   const [systemDark, setSystemDark] = useState(
     () => window.matchMedia('(prefers-color-scheme: dark)').matches,
   )
@@ -47,6 +54,13 @@ export function App() {
     const onPop = () => setPath(window.location.pathname)
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
+  }, [])
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 640px)')
+    const onChange = (event: MediaQueryListEvent) => setNarrow(event.matches)
+    media.addEventListener('change', onChange)
+    return () => media.removeEventListener('change', onChange)
   }, [])
 
   useEffect(() => {
@@ -120,6 +134,17 @@ export function App() {
     window.history.pushState({}, '', to)
     setPath(to)
   }, [])
+
+  const openEditor = (transfer: TransferSummary) => {
+    setSheetWasOpen(sheetOpen)
+    if (narrow) setSheetOpen(false)
+    setEditing(transfer)
+  }
+
+  const closeEditor = () => {
+    setEditing(null)
+    if (narrow && sheetWasOpen) setSheetOpen(true)
+  }
 
   const signOut = async () => {
     await api.logout().catch(() => undefined)
@@ -200,19 +225,20 @@ export function App() {
         publicHost={session.me.publicHost}
         onClose={() => setSheetOpen(false)}
         onCopy={copyLink}
-        onEdit={(transfer) => setEditing(transfer)}
+        onEdit={openEditor}
         onOpen={(target) => {
           setSheetOpen(false)
           navigate(`/${target}`)
         }}
-        onDelete={(transfer) => setEditing(transfer)}
+        onDelete={openEditor}
       />
 
       {editing && (
         <EditModal
           transfer={editing}
           locale={locale}
-          onClose={() => setEditing(null)}
+          besideSheet={sheetOpen && !narrow}
+          onClose={closeEditor}
           onSaved={refreshTransfers}
           onDeleted={refreshTransfers}
         />

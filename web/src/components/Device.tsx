@@ -5,7 +5,9 @@
  * keys are the only elements permitted real depth.
  */
 
-import type { CSSProperties, ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+
+import { translate, type Locale, type StringKey } from '../lib/i18n'
 
 export function Panel({
   children,
@@ -179,5 +181,59 @@ export function Key({
       {lamp && <Lamp color={lamp.color} size={7} pulse={lamp.pulse} />}
       <span className="fret-key__label">{children}</span>
     </button>
+  )
+}
+
+/**
+ * The restore tag.
+ *
+ * Renaming a live transfer is deliberate — you do it precisely when a link
+ * went to the wrong person — so the old name stops working, as it should. But
+ * the name itself should not be lost, and it stays reserved to this transfer
+ * server-side, so restoring it always succeeds.
+ *
+ * It is drawn as a paper tag tucked into the base of the device rather than a
+ * warning banner: nothing is broken, a previous name is simply on file. It
+ * exists in the DOM only while there is one to offer.
+ */
+export function RestoreTag({
+  slug,
+  current,
+  locale,
+  onRestore,
+}: {
+  /** The name the link was handed out under, or '' if it never was. */
+  slug: string
+  current: string
+  locale: Locale
+  onRestore: () => void
+}) {
+  const showing = slug !== '' && slug !== current
+  // Held after `showing` goes false so the tag can slide back under the device
+  // instead of vanishing mid-transition.
+  const [remembered, setRemembered] = useState(slug)
+  useEffect(() => {
+    if (showing) setRemembered(slug)
+  }, [showing, slug])
+
+  if (remembered === '') return null
+  const t = (key: StringKey) => translate(locale, key)
+
+  return (
+    <div className={`fret-tag${showing ? ' fret-tag--out' : ''}`} aria-hidden={!showing}>
+      <div className="fret-tag__inner">
+        <span className="fret-tag__label">{t('tag.sharedAs')}</span>
+        <span className="fret-tag__slug">{remembered}</span>
+        <span className="fret-tag__note">{t('tag.note')}</span>
+        <button
+          type="button"
+          className="fret-tag__restore"
+          onClick={onRestore}
+          tabIndex={showing ? 0 : -1}
+        >
+          {t('tag.restore')}
+        </button>
+      </div>
+    </div>
   )
 }
