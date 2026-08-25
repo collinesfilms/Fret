@@ -93,7 +93,8 @@
   letter-spacing: -0.03em;
   color: var(--screenFg);
   display: flex;
-  align-items: center;
+  /* Baseline, not centre: see the Caret component. */
+  align-items: baseline;
   /* The caret carries its own leading margin, sized to the type. */
   gap: 0;
 }
@@ -256,9 +257,14 @@
 
 .fret-caret {
   display: inline-block;
+  vertical-align: baseline;
   background: var(--accent);
   animation: fretCaret 1.1s step-end infinite;
   flex-shrink: 0;
+  /* Roughly a cap height, so it stands as tall as the letters beside it. */
+  height: 0.74em;
+  width: 0.36em;
+  margin-left: 0.18em;
 }
 
 /* ---------- vent ---------- */

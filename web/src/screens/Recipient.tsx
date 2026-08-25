@@ -128,7 +128,7 @@ export function Recipient({
               <Strip color="var(--accent)" label={t('recipient.lockedStrip')} />
               <div className="fret-screen__title">
                 {t('recipient.locked')}
-                <Caret fontSize={20} />
+                <Caret />
               </div>
               <form onSubmit={unlock} style={{ marginTop: 16, display: 'flex', gap: 8 }}>
                 <Field
@@ -184,7 +184,7 @@ function ReadyView({ transfer, locale }: { transfer: PublicTransfer; locale: Loc
           {transfer.senderName
             ? t('recipient.sent', { name: transfer.senderName, count })
             : t('recipient.sentAnon', { count })}
-          <Caret fontSize={20} />
+          <Caret />
         </div>
 
         <div className="fret-filelist" style={{ marginTop: 8, maxHeight: 260 }}>

@@ -60,25 +60,20 @@ export function Lamp({
 /**
  * The blinking block cursor that follows a line of type.
  *
- * Sized from the type it sits beside rather than by hand, because hand-tuned
- * pairs drift: at 26px the caret was noticeably short and tight, and at 20px
- * on the recipient screen it was smaller again and sat too high. Cap height is
- * about 0.72em and the optical centre of a line sits slightly below its
- * geometric one, hence the nudge down.
+ * Sized in em, so it is measured against the type it actually sits beside
+ * rather than a number passed in beside it. That distinction is the whole
+ * fix: the recipient title is clamp(21px, 3.2vw, 27px), so a caret told it
+ * was 20px was drawn a third too small at most window widths, and no amount
+ * of tuning the number would have held across the clamp.
+ *
+ * It sits on the baseline rather than centred in the line box. Centring is
+ * what made it look high: a line box carries descender space the letters do
+ * not use, so its middle sits below the middle of the visible text. An empty
+ * inline-block aligns its bottom edge to the baseline, which is exactly where
+ * a block cursor belongs.
  */
-export function Caret({ fontSize }: { fontSize: number }) {
-  return (
-    <span
-      className="fret-caret"
-      aria-hidden="true"
-      style={{
-        width: Math.round(fontSize * 0.4),
-        height: Math.round(fontSize * 0.78),
-        marginLeft: Math.round(fontSize * 0.16),
-        transform: `translateY(${(fontSize * 0.04).toFixed(1)}px)`,
-      }}
-    />
-  )
+export function Caret() {
+  return <span className="fret-caret" aria-hidden="true" />
 }
 
 export function Screen({

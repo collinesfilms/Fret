@@ -181,10 +181,20 @@
   height: 0;
   opacity: 0;
   overflow: hidden;
-  transition: height 0.46s cubic-bezier(0.32, 0.9, 0.28, 1), opacity 0.3s ease;
+  /*
+   * Cancels the panel's row gap while closed. A flex gap applies between every
+   * pair of children, including a child of zero height, so a collapsed device
+   * was carrying a band of empty space under its vent that nothing occupied —
+   * twice the space above it. The margin animates with the height, so the gap
+   * arrives exactly as the settings do.
+   */
+  margin-top: -16px;
+  transition: height 0.46s cubic-bezier(0.32, 0.9, 0.28, 1),
+    margin-top 0.46s cubic-bezier(0.32, 0.9, 0.28, 1), opacity 0.3s ease;
 }
 
 .fret-grow--open {
+  margin-top: 0;
   opacity: 1;
 }
 
