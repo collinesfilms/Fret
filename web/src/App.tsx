@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { EditModal } from './components/EditModal'
 import { TopBar } from './components/TopBar'
-import { TransfersSheet } from './components/TransfersSheet'
+import { TransfersSheet, type EngagedAction } from './components/TransfersSheet'
 import { api, ApiError, type Me, type PublicConfig, type TransferSummary } from './lib/api'
 import { resolveLocale, translate, type Locale } from './lib/i18n'
 import { Recipient } from './screens/Recipient'
@@ -25,6 +25,8 @@ export function App() {
   const [storageUsed, setStorageUsed] = useState(0)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<TransferSummary | null>(null)
+  // Which row action opened the modal, so that cell can stay visibly pressed.
+  const [engaged, setEngaged] = useState<EngagedAction | null>(null)
   /*
    * On a phone the modal replaces the sheet rather than stacking on it, and
    * the sheet comes back when the modal closes. Two stacked sheets never feel
@@ -135,14 +137,16 @@ export function App() {
     setPath(to)
   }, [])
 
-  const openEditor = (transfer: TransferSummary) => {
+  const openEditor = (transfer: TransferSummary, action: EngagedAction['action']) => {
     setSheetWasOpen(sheetOpen)
     if (narrow) setSheetOpen(false)
+    setEngaged({ id: transfer.id, action })
     setEditing(transfer)
   }
 
   const closeEditor = () => {
     setEditing(null)
+    setEngaged(null)
     if (narrow && sheetWasOpen) setSheetOpen(true)
   }
 
@@ -223,14 +227,15 @@ export function App() {
         transfers={transfers}
         storageUsed={storageUsed}
         publicHost={session.me.publicHost}
+        engaged={engaged}
         onClose={() => setSheetOpen(false)}
         onCopy={copyLink}
-        onEdit={openEditor}
+        onEdit={(transfer) => openEditor(transfer, 'edit')}
         onOpen={(target) => {
           setSheetOpen(false)
           navigate(`/${target}`)
         }}
-        onDelete={openEditor}
+        onDelete={(transfer) => openEditor(transfer, 'delete')}
       />
 
       {editing && (
@@ -238,6 +243,7 @@ export function App() {
           transfer={editing}
           locale={locale}
           besideSheet={sheetOpen && !narrow}
+          armDelete={engaged?.action === 'delete'}
           onClose={closeEditor}
           onSaved={refreshTransfers}
           onDeleted={refreshTransfers}

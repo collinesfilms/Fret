@@ -39,9 +39,9 @@ const en = {
   'settings.passwordNone': 'none',
   'settings.passwordKept': 'unchanged',
 
-  'tag.sharedAs': 'SHARED AS',
+  'tag.sharedAs': 'PREVIOUS LINK',
   'tag.restore': 'RESTORE',
-  'tag.note': 'the link you sent no longer works',
+  'tag.note': 'still reserved for you',
 
   'key.waiting': 'Waiting for upload',
   'key.copied': 'Copied to clipboard',
@@ -156,9 +156,9 @@ const fr: Record<StringKey, string> = {
   'settings.passwordNone': 'aucun',
   'settings.passwordKept': 'inchangé',
 
-  'tag.sharedAs': 'PARTAGÉ SOUS',
+  'tag.sharedAs': 'LIEN PRÉCÉDENT',
   'tag.restore': 'RESTAURER',
-  'tag.note': 'le lien envoyé ne fonctionne plus',
+  'tag.note': 'toujours réservé pour vous',
 
   'key.waiting': "En attente de l'envoi",
   'key.copied': 'Copié',

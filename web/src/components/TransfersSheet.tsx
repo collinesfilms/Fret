@@ -14,12 +14,19 @@ type Filter = 'all' | 'expiring' | 'locked'
 /** Past this many pixels of downward drag, the mobile sheet dismisses. */
 const DISMISS_AFTER = 70
 
+/** Which row action is currently held open, so its cell can read as pressed. */
+export interface EngagedAction {
+  id: string
+  action: 'edit' | 'delete'
+}
+
 interface SheetProps {
   open: boolean
   locale: Locale
   transfers: TransferSummary[]
   storageUsed: number
   publicHost: string
+  engaged: EngagedAction | null
   onClose: () => void
   onCopy: (slug: string) => void
   onEdit: (transfer: TransferSummary) => void
@@ -32,6 +39,7 @@ export function TransfersSheet({
   locale,
   transfers,
   storageUsed,
+  engaged,
   onClose,
   onCopy,
   onEdit,
@@ -202,6 +210,7 @@ export function TransfersSheet({
                   key={transfer.id}
                   transfer={transfer}
                   locale={locale}
+                  engaged={engaged?.id === transfer.id ? engaged.action : null}
                   open={openRow === transfer.id}
                   interactive={open}
                   onToggle={() => setOpenRow(openRow === transfer.id ? null : transfer.id)}
@@ -231,6 +240,7 @@ function Stat({ value, label }: { value: string; label: string }) {
 function Row({
   transfer,
   locale,
+  engaged,
   open,
   interactive,
   onToggle,
@@ -241,6 +251,7 @@ function Row({
 }: {
   transfer: TransferSummary
   locale: Locale
+  engaged: 'edit' | 'delete' | null
   open: boolean
   interactive: boolean
   onToggle: () => void
@@ -298,9 +309,20 @@ function Row({
       <div className={`fret-rowactions${open ? ' fret-rowactions--open' : ''}`}>
         <div className="fret-rowactions__strip">
           <Action label={t('action.copy')} onClick={onCopy} tabIndex={open ? tab : -1} />
-          <Action label={t('action.edit')} onClick={onEdit} tabIndex={open ? tab : -1} />
+          <Action
+            label={t('action.edit')}
+            onClick={onEdit}
+            engaged={engaged === 'edit'}
+            tabIndex={open ? tab : -1}
+          />
           <Action label={t('action.open')} onClick={onOpen} tabIndex={open ? tab : -1} />
-          <Action label={t('action.delete')} onClick={onDelete} danger tabIndex={open ? tab : -1} />
+          <Action
+            label={t('action.delete')}
+            onClick={onDelete}
+            engaged={engaged === 'delete'}
+            danger
+            tabIndex={open ? tab : -1}
+          />
         </div>
       </div>
     </div>
@@ -311,18 +333,29 @@ function Action({
   label,
   onClick,
   danger,
+  engaged,
   tabIndex,
 }: {
   label: string
   onClick: () => void
   danger?: boolean
+  /** True while the surface this opens is still open. */
+  engaged?: boolean
   tabIndex?: number
 }) {
+  const classes = [
+    'fret-rowaction',
+    danger && 'fret-rowaction--danger',
+    engaged && 'fret-rowaction--engaged',
+  ]
+    .filter(Boolean)
+    .join(' ')
   return (
     <button
       type="button"
-      className={`fret-rowaction${danger ? ' fret-rowaction--danger' : ''}`}
+      className={classes}
       onClick={onClick}
+      aria-expanded={engaged === undefined ? undefined : engaged}
       tabIndex={tabIndex}
     >
       {label}

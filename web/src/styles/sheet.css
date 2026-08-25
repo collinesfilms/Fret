@@ -399,13 +399,14 @@
   border: none;
   border-left: 1px solid var(--edge);
   padding: 13px 4px;
+  box-shadow: none;
   font-family: var(--mono);
   font-size: 8px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--fg2);
   cursor: pointer;
-  transition: background 0.16s ease, color 0.16s ease;
+  transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
 }
 
 .fret-rowaction:first-child {
@@ -415,6 +416,28 @@
 .fret-rowaction:hover {
   background: var(--body);
   color: var(--fg);
+}
+
+/*
+ * Held down while the surface it opened is still open. The recessed fill and
+ * inset shadow are the same treatment a key gets on :active — the difference
+ * is that this one stays pressed, which is what tells you where the modal in
+ * front of you came from.
+ */
+.fret-rowaction--engaged,
+.fret-rowaction--engaged:hover {
+  background: var(--sunk);
+  box-shadow:
+    inset 0 2px 5px rgba(35, 33, 31, 0.2),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.5);
+  color: var(--fg);
+}
+
+:root[data-theme='dark'] .fret-rowaction--engaged,
+:root[data-theme='dark'] .fret-rowaction--engaged:hover {
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.55),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
 }
 
 /* Delete keeps the accent it has everywhere else; nothing else in the strip

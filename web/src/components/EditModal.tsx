@@ -18,6 +18,12 @@ interface EditModalProps {
   locale: Locale
   /** True while the transfers sheet is open beside it, on desktop. */
   besideSheet?: boolean
+  /**
+   * Opened from the row's Delete rather than its Edit, so the confirmation is
+   * already showing — otherwise pressing Delete would land you on a form with
+   * no sign of what you asked for.
+   */
+  armDelete?: boolean
   onClose: () => void
   onSaved: () => void
   onDeleted: () => void
@@ -27,6 +33,7 @@ export function EditModal({
   transfer,
   locale,
   besideSheet,
+  armDelete,
   onClose,
   onSaved,
   onDeleted,
@@ -40,7 +47,7 @@ export function EditModal({
   const [error, setError] = useState<string | null>(null)
   const [slugError, setSlugError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(Boolean(armDelete))
   const firstField = useRef<HTMLInputElement>(null)
 
   const t = (key: StringKey, vars?: Record<string, string | number>) =>
