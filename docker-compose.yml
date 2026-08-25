@@ -1,0 +1,63 @@
+# A complete Fret instance with its own MinIO.
+#
+# If you already run S3-compatible storage, delete the minio services and point
+# FRET_S3_* at what you have.
+
+services:
+  fret:
+    image: ghcr.io/collinesfilms/fret:latest
+    # Or build from a checkout:
+    # build: .
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - fret-data:/data
+    env_file: .env
+    environment:
+      # Inside the compose network Fret reaches MinIO directly, while the
+      # browser needs the address you expose publicly.
+      FRET_S3_INTERNAL_ENDPOINT: http://minio:9000
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    environment:
+      MINIO_ROOT_USER: ${FRET_S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${FRET_S3_SECRET_KEY}
+      # MinIO permits every origin by default. Narrow it to the browsers that
+      # should be uploading; ETag is exposed either way, which is what
+      # multipart uploads depend on.
+      MINIO_API_CORS_ALLOW_ORIGIN: ${FRET_PUBLIC_URL}
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # Creates the bucket once, then exits.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    env_file: .env
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set fret http://minio:9000 $${FRET_S3_ACCESS_KEY} $${FRET_S3_SECRET_KEY} &&
+      mc mb --ignore-existing fret/$${FRET_S3_BUCKET} &&
+      echo 'bucket ready'
+      "
+
+volumes:
+  fret-data:
+  minio-data:

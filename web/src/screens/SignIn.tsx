@@ -92,21 +92,25 @@ export function SignIn({
             window.location.href = '/auth/login'
           }}
         >
-          {t('signin.continue', { provider: providerHost })}
+          {providerHost
+            ? t('signin.continue', { provider: providerHost })
+            : t('signin.continueGeneric')}
         </Key>
 
-        <div
-          style={{
-            fontFamily: 'var(--mono)',
-            fontSize: 8.5,
-            letterSpacing: '0.14em',
-            color: 'var(--fg3)',
-            textAlign: 'center',
-            marginTop: 16,
-          }}
-        >
-          {providerHost}
-        </div>
+        {providerHost && (
+          <div
+            style={{
+              fontFamily: 'var(--mono)',
+              fontSize: 8.5,
+              letterSpacing: '0.14em',
+              color: 'var(--fg3)',
+              textAlign: 'center',
+              marginTop: 16,
+            }}
+          >
+            {providerHost}
+          </div>
+        )}
       </Panel>
     </div>
   )

@@ -83,19 +83,44 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request, u *db.User) {
 }
 
 func (s *Server) meFor(u *db.User) meResponse {
-	host := s.cfg.PublicURL
-	if parsed, err := url.Parse(s.cfg.PublicURL); err == nil && parsed.Host != "" {
-		host = parsed.Host
-	}
 	return meResponse{
 		User:       u,
 		Initials:   u.Initials(),
 		Superadmin: s.isSuperadmin(u),
 		AppName:    s.cfg.AppName,
 		Locale:     s.cfg.Locale,
-		PublicHost: host,
+		PublicHost: hostOf(s.cfg.PublicURL),
 		Region:     s.cfg.S3Region,
 	}
+}
+
+// publicConfig is the instance's own identity, needed before anyone signs in
+// and by recipients who never will. The sign-in screen has to name the right
+// identity provider, and a renamed instance must not introduce itself as
+// "Fret" to the person receiving the files.
+type publicConfig struct {
+	AppName      string `json:"appName"`
+	Locale       string `json:"locale"`
+	PublicHost   string `json:"publicHost"`
+	ProviderHost string `json:"providerHost"`
+}
+
+func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
+	send(w, http.StatusOK, publicConfig{
+		AppName:      s.cfg.AppName,
+		Locale:       s.cfg.Locale,
+		PublicHost:   hostOf(s.cfg.PublicURL),
+		ProviderHost: hostOf(s.cfg.OIDCIssuer),
+	})
+}
+
+// hostOf reduces a URL to its host, which is all the interface displays.
+func hostOf(raw string) string {
+	parsed, err := url.Parse(raw)
+	if err != nil || parsed.Host == "" {
+		return strings.TrimPrefix(strings.TrimPrefix(raw, "https://"), "http://")
+	}
+	return parsed.Host
 }
 
 type preferencesRequest struct {

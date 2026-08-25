@@ -92,6 +92,17 @@ export interface PublicTransfer {
   fileCount: number
 }
 
+/**
+ * The instance's own identity, readable without a session. The sign-in screen
+ * and the recipient page both need it before — or without — anyone signing in.
+ */
+export interface PublicConfig {
+  appName: string
+  locale: string
+  publicHost: string
+  providerHost: string
+}
+
 export interface AdminStats {
   bucketBytes: number
   bucketObjects: number
@@ -148,6 +159,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 const json = (value: unknown) => JSON.stringify(value)
 
 export const api = {
+  config: () => request<PublicConfig>('/api/config'),
+
   me: () => request<Me>('/api/me'),
 
   savePreferences: (patch: Partial<Pick<User, 'theme' | 'slugStyle' | 'slugLength' | 'defaultExpiry'>>) =>

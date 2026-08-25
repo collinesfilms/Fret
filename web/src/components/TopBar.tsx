@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { api, type AdminStats, type Expiry, type Me, type SlugStyle, type Theme } from '../lib/api'
 import { formatBytes, pad2 } from '../lib/format'
-import { translate, type Locale, type StringKey } from '../lib/i18n'
+import { counted, translate, type Locale, type StringKey } from '../lib/i18n'
 import { Segmented } from './Controls'
 
 interface TopBarProps {
@@ -277,7 +277,8 @@ function SettingsPopover({
           </div>
           <div className="fret-admin__value">{formatBytes(stats.bucketBytes)}</div>
           <div className="fret-admin__sub">
-            {t('admin.accounts', { accounts: stats.accounts, objects: stats.bucketObjects })}
+            {counted(locale, stats.accounts, 'admin.account', 'admin.accountPlural')} ·{' '}
+            {counted(locale, stats.bucketObjects, 'admin.object', 'admin.objectPlural')}
           </div>
           <div className="fret-admin__sub">
             {stats.bucket} · {stats.region}

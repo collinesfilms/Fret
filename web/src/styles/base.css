@@ -65,9 +65,13 @@ a:hover {
 /*
  * A single visible focus treatment. Keys and pills carry their own depth, so
  * the ring sits outside them rather than replacing any of their shadows.
+ *
+ * It is neutral rather than accent: in this palette accent means alert,
+ * uploading, unsaved or invalid, and a focused field wearing it reads as an
+ * error. Keeping focus grey leaves accent to mean one thing.
  */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--fg2);
   outline-offset: 2px;
 }
 

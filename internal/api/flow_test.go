@@ -633,3 +633,52 @@ func fetch(t *testing.T, url string) []byte {
 	data, _ := io.ReadAll(resp.Body)
 	return data
 }
+
+// TestPublicConfigIsReadableWithoutASession covers what the sign-in screen and
+// the recipient page need before, or without, anyone signing in.
+func TestPublicConfigIsReadableWithoutASession(t *testing.T) {
+	h := newHarness(t)
+	resp, body := h.public(http.MethodGet, "/api/config", nil)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("public config returned %d", resp.StatusCode)
+	}
+	config := decodeInto[struct {
+		AppName      string `json:"appName"`
+		Locale       string `json:"locale"`
+		PublicHost   string `json:"publicHost"`
+		ProviderHost string `json:"providerHost"`
+	}](t, body)
+
+	if config.AppName != "Fret" {
+		t.Errorf("app name is %q", config.AppName)
+	}
+	if config.PublicHost != "fret.test" {
+		t.Errorf("public host is %q, want the host alone", config.PublicHost)
+	}
+	// The sign-in screen names the identity provider, so this must be the
+	// issuer's host and not Fret's own.
+	if config.ProviderHost != "oidc.test" {
+		t.Errorf("provider host is %q, want the issuer's host", config.ProviderHost)
+	}
+	// Nothing here may leak configuration a stranger should not see.
+	for _, secret := range []string{"secret", "key", "xxxxxxxx"} {
+		if strings.Contains(strings.ToLower(string(body)), secret) {
+			t.Errorf("public config may be leaking configuration: %s", body)
+		}
+	}
+}
+
+func TestHostOf(t *testing.T) {
+	cases := map[string]string{
+		"https://id.example.com":          "id.example.com",
+		"https://id.example.com/realms/x": "id.example.com",
+		"http://localhost:9000":           "localhost:9000",
+		"id.example.com":                  "id.example.com",
+		"":                                "",
+	}
+	for in, want := range cases {
+		if got := hostOf(in); got != want {
+			t.Errorf("hostOf(%q) = %q, want %q", in, got, want)
+		}
+	}
+}

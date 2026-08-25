@@ -177,6 +177,25 @@ export function TransferScreen({
     startUpload(picked, awaitingResume && resumable ? resumable : undefined)
   }
 
+  /**
+   * Retries a failed upload through the resume path, so the parts that already
+   * landed are not sent a second time. The browser cannot reach back into the
+   * filesystem on its own, so this asks for the same files again.
+   */
+  const retry = async () => {
+    try {
+      const { transfers } = await api.resumable()
+      const match = transfers.find((entry) => entry.id === transfer?.id) ?? transfers[0]
+      if (match) {
+        setResumable(match)
+        setAwaitingResume(true)
+      }
+    } catch {
+      // Falling through still opens the picker, which starts a fresh transfer.
+    }
+    inputRef.current?.click()
+  }
+
   const reset = () => {
     uploadRef.current?.cancel()
     uploadRef.current = null
@@ -248,6 +267,15 @@ export function TransferScreen({
    * single status enum.
    */
   const keyState = (() => {
+    if (phase === 'failed') {
+      // The transfer never went live, so there is no link worth copying.
+      return {
+        label: t('app.retry'),
+        lamp: { color: 'var(--accent)', pulse: true },
+        inert: false,
+        action: retry,
+      }
+    }
     if (uploading) {
       return {
         label: t('key.uploading', { percent }),
@@ -339,8 +367,10 @@ export function TransferScreen({
                   }}
                 >
                   {t('app.resumable')} · {resumable.slug} ·{' '}
-                  {formatBytes(resumable.uploadedBytes)} / {formatBytes(resumable.totalBytes)} ·{' '}
-                  {t('app.resumeHint')}
+                  {formatBytes(resumable.uploadedBytes)} of {formatBytes(resumable.totalBytes)}
+                  <div style={{ color: 'var(--screenDim)', marginTop: 3 }}>
+                    {t('app.resumeHint')}
+                  </div>
                 </div>
               )}
             </>

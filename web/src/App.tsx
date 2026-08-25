@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { EditModal } from './components/EditModal'
 import { TopBar } from './components/TopBar'
 import { TransfersSheet } from './components/TransfersSheet'
-import { api, ApiError, type Me, type TransferSummary } from './lib/api'
+import { api, ApiError, type Me, type PublicConfig, type TransferSummary } from './lib/api'
 import { resolveLocale, translate, type Locale } from './lib/i18n'
 import { Recipient } from './screens/Recipient'
 import { SignIn } from './screens/SignIn'
@@ -28,6 +28,8 @@ export function App() {
   const [systemDark, setSystemDark] = useState(
     () => window.matchMedia('(prefers-color-scheme: dark)').matches,
   )
+  const [config, setConfig] = useState<PublicConfig | null>(null)
+  const [configLoaded, setConfigLoaded] = useState(false)
 
   const slug = path.replace(/^\/+/, '').split('/')[0]
   const isRecipient = slug !== ''
@@ -55,6 +57,13 @@ export function App() {
   }, [])
 
   useEffect(() => {
+    // The instance's identity is public, so it loads for recipients and for
+    // anyone who has not signed in.
+    api
+      .config()
+      .then(setConfig)
+      .catch(() => setConfig(null))
+      .finally(() => setConfigLoaded(true))
     api
       .me()
       .then((me) => setSession({ kind: 'in', me }))
@@ -62,7 +71,7 @@ export function App() {
   }, [])
 
   const me = session.kind === 'in' ? session.me : null
-  const locale: Locale = resolveLocale(me?.locale)
+  const locale: Locale = resolveLocale(me?.locale ?? config?.locale)
 
   /*
    * The stored theme wins once the account has loaded, so the choice follows a
@@ -85,8 +94,9 @@ export function App() {
   }, [resolvedTheme])
 
   useEffect(() => {
-    if (me) document.title = me.appName
-  }, [me])
+    const name = me?.appName ?? config?.appName
+    if (name) document.title = name
+  }, [me, config])
 
   const refreshTransfers = useCallback(() => {
     if (session.kind !== 'in') return
@@ -125,6 +135,12 @@ export function App() {
     }
   }
 
+  // Nothing renders until the instance has introduced itself, so a renamed
+  // deployment never flashes the default name at anyone.
+  if (session.kind === 'loading' || !configLoaded) {
+    return <div className="fret-studio" />
+  }
+
   // A recipient link renders for anyone, signed in or not.
   if (isRecipient) {
     return (
@@ -132,15 +148,11 @@ export function App() {
         <Recipient
           slug={slug}
           locale={locale}
-          appName={me?.appName ?? 'Fret'}
-          publicHost={me?.publicHost ?? window.location.host}
+          appName={config?.appName ?? me?.appName ?? 'Fret'}
+          publicHost={config?.publicHost ?? me?.publicHost ?? window.location.host}
         />
       </div>
     )
-  }
-
-  if (session.kind === 'loading') {
-    return <div className="fret-studio" />
   }
 
   if (session.kind === 'out') {
@@ -148,8 +160,8 @@ export function App() {
       <div className="fret-studio">
         <SignIn
           locale={locale}
-          appName="Fret"
-          providerHost={window.location.host}
+          appName={config?.appName ?? 'Fret'}
+          providerHost={config?.providerHost ?? ''}
           error={signinError ? translate(locale, signinError) : null}
         />
       </div>

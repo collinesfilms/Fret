@@ -309,6 +309,16 @@
   min-width: 0;
 }
 
+/*
+ * The slug and its metadata are spans inside a block, so they need an explicit
+ * display: without it they flow inline and collide on one line, and neither
+ * the margin nor the ellipsis truncation below would apply.
+ */
+.fret-row__slug,
+.fret-row__meta {
+  display: block;
+}
+
 .fret-row__slug {
   font-size: 13px;
   font-weight: 500;

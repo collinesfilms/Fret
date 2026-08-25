@@ -14,6 +14,7 @@ const en = {
   'signin.noAccounts': 'no accounts · oidc only',
   'signin.providerHandles': 'provider handles credentials',
   'signin.continue': 'Continue with {provider}',
+  'signin.continueGeneric': 'Continue with single sign-on',
   'signin.failed': 'sign-in failed · try again',
   'signin.expired': 'sign-in timed out · try again',
   'signin.unreachable': 'provider unreachable',
@@ -92,7 +93,10 @@ const en = {
 
   'admin.label': 'superadmin',
   'admin.bucket': 'Bucket, all users',
-  'admin.accounts': '{accounts} accounts · {objects} objects',
+  'admin.account': '{count} account',
+  'admin.accountPlural': '{count} accounts',
+  'admin.object': '{count} object',
+  'admin.objectPlural': '{count} objects',
 
   'recipient.ready': 'ready to download',
   'recipient.sent': '{name} sent you {count}',
@@ -128,6 +132,7 @@ const fr: Record<StringKey, string> = {
   'signin.noAccounts': 'aucun compte · oidc uniquement',
   'signin.providerHandles': 'identifiants gérés par le fournisseur',
   'signin.continue': 'Continuer avec {provider}',
+  'signin.continueGeneric': 'Continuer avec le SSO',
   'signin.failed': 'échec de la connexion · réessayez',
   'signin.expired': 'connexion expirée · réessayez',
   'signin.unreachable': 'fournisseur injoignable',
@@ -206,7 +211,10 @@ const fr: Record<StringKey, string> = {
 
   'admin.label': 'superadmin',
   'admin.bucket': 'Bucket, tous comptes',
-  'admin.accounts': '{accounts} comptes · {objects} objets',
+  'admin.account': '{count} compte',
+  'admin.accountPlural': '{count} comptes',
+  'admin.object': '{count} objet',
+  'admin.objectPlural': '{count} objets',
 
   'recipient.ready': 'prêt à télécharger',
   'recipient.sent': '{name} vous a envoyé {count}',
@@ -257,4 +265,14 @@ export function translate(
 /** Renders a file count in the active locale. */
 export function fileCount(locale: Locale, count: number): string {
   return translate(locale, count === 1 ? 'file.count' : 'file.countPlural', { count })
+}
+
+/** Renders a count with a noun that has its own singular and plural keys. */
+export function counted(
+  locale: Locale,
+  count: number,
+  singular: StringKey,
+  plural: StringKey,
+): string {
+  return translate(locale, count === 1 ? singular : plural, { count })
 }

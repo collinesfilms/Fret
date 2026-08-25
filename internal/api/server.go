@@ -88,6 +88,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/t/{slug}/files/{fileID}", s.handlePublicFile)
 	mux.HandleFunc("GET /api/t/{slug}/archive", s.handleArchive)
 
+	mux.HandleFunc("GET /api/config", s.handleConfig)
 	mux.HandleFunc("GET /api/health", s.handleHealth)
 
 	// Everything else is the SPA, including /{slug} recipient links.
