@@ -187,7 +187,7 @@ function ReadyView({ transfer, locale }: { transfer: PublicTransfer; locale: Loc
           <Caret width={8} height={16} />
         </div>
 
-        <div className="fret-filelist" style={{ marginTop: 14, maxHeight: 240 }}>
+        <div className="fret-filelist" style={{ marginTop: 8, maxHeight: 260 }}>
           {transfer.files.map((file) => (
             <div className="fret-filelist__row" key={file.id} style={{ padding: '8px 0' }}>
               <span className="fret-filelist__name">{file.name}</span>

@@ -173,25 +173,28 @@
 }
 
 /*
- * The device grows into its settings while bytes are still moving. Animating
- * grid-template-rows between 0fr and 1fr is what lets it size itself to its
- * content without a hard-coded height.
+ * The device grows into its settings while bytes are still moving. The height
+ * is measured and set from JavaScript (see the Grow component) so this works
+ * in every browser rather than only the ones that interpolate grid rows.
  */
 .fret-grow {
-  display: grid;
-  grid-template-rows: 0fr;
+  height: 0;
   opacity: 0;
-  transition: grid-template-rows 0.46s cubic-bezier(0.32, 0.9, 0.28, 1), opacity 0.3s ease;
+  overflow: hidden;
+  transition: height 0.46s cubic-bezier(0.32, 0.9, 0.28, 1), opacity 0.3s ease;
 }
 
 .fret-grow--open {
-  grid-template-rows: 1fr;
   opacity: 1;
 }
 
 .fret-grow__inner {
-  overflow: hidden;
-  min-height: 0;
+  /*
+   * The keys inside cast a shadow ~15px below themselves, which the clip above
+   * would otherwise cut off flat. The padding gives it somewhere to land, and
+   * the measured height includes it.
+   */
+  padding-bottom: 14px;
 }
 
 .fret-row {

@@ -13,7 +13,6 @@ interface TopBarProps {
   me: Me
   locale: Locale
   activeCount: number
-  storageUsed: number
   resolvedTheme: 'light' | 'dark'
   onToggleTheme: () => void
   onOpenSheet: () => void
@@ -25,7 +24,6 @@ export function TopBar({
   me,
   locale,
   activeCount,
-  storageUsed,
   resolvedTheme,
   onToggleTheme,
   onOpenSheet,
@@ -117,12 +115,7 @@ export function TopBar({
         </button>
 
         {menu === 'settings' && (
-          <SettingsPopover
-            me={me}
-            locale={locale}
-            storageUsed={storageUsed}
-            onUpdateMe={onUpdateMe}
-          />
+          <SettingsPopover me={me} locale={locale} onUpdateMe={onUpdateMe} />
         )}
       </div>
     </div>
@@ -152,12 +145,10 @@ function SettingsGlyph() {
 function SettingsPopover({
   me,
   locale,
-  storageUsed,
   onUpdateMe,
 }: {
   me: Me
   locale: Locale
-  storageUsed: number
   onUpdateMe: (me: Me) => void
 }) {
   const [stats, setStats] = useState<AdminStats | null>(null)
@@ -181,8 +172,6 @@ function SettingsPopover({
       setSaving(false)
     }
   }
-
-  const issuer = me.user.email || me.user.name
 
   return (
     <div className="fret-popover" style={{ opacity: saving ? 0.7 : 1 }}>
@@ -245,20 +234,6 @@ function SettingsPopover({
             { value: 'never', label: '∞' },
           ]}
         />
-      </div>
-
-      <div className="fret-popover__row">
-        <span className="fret-popover__label">{t('prefs.signedInVia')}</span>
-        <span className="fret-popover__value" title={issuer}>
-          {issuer}
-        </span>
-      </div>
-
-      <div className="fret-popover__stack">
-        <div className="fret-popover__stackLabel">{t('prefs.storage')}</div>
-        <div className="fret-popover__value" style={{ textAlign: 'left', marginLeft: 0 }}>
-          {formatBytes(storageUsed)}
-        </div>
       </div>
 
       {/*

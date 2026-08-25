@@ -21,14 +21,12 @@ const OUT = resolve(HERE, '../../docs/screenshots')
 const BASE = process.env.FRET_DEMO_URL ?? 'http://127.0.0.1:8080'
 
 /*
- * Viewports are sized per shot so the device fills its frame. The panel is
- * 568px wide, so a wide window would leave most of the image empty; the sheet
- * needs the extra width because it sits beside the device.
+ * Shots are full-window captures. The device is a fixed width centred in the
+ * viewport and the space around it is part of the design, so these are sized
+ * like a real window rather than cropped to the panel.
  */
-const DEVICE = { width: 900, height: 660 }
-const DEVICE_TALL = { width: 900, height: 900 }
-const CARD = { width: 720, height: 560 }
-const WIDE = { width: 1240, height: 840 }
+const DESKTOP = { width: 1180, height: 800 }
+const DESKTOP_TALL = { width: 1180, height: 940 }
 const MOBILE = { width: 414, height: 820 }
 
 let browser
@@ -52,102 +50,7 @@ async function shot(page, name) {
   console.log(`  ${name}.png`)
 }
 
-/**
- * Screenshots a region framed around the app's own content.
- *
- * The device is a fixed 568px wide and vertically centred in the viewport, so
- * a plain full-page shot leaves most of the image empty. This measures what is
- * actually on screen and clips to it with an even margin.
- */
-async function shotFramed(page, name, selectors, pad = 44) {
-  await settle(page)
-  const box = await page.evaluate((list) => {
-    const rects = list
-      .map((selector) => document.querySelector(selector))
-      .filter(Boolean)
-      .map((element) => element.getBoundingClientRect())
-    if (rects.length === 0) return null
-    return {
-      left: Math.min(...rects.map((r) => r.left)),
-      top: Math.min(...rects.map((r) => r.top)),
-      right: Math.max(...rects.map((r) => r.right)),
-      bottom: Math.max(...rects.map((r) => r.bottom)),
-      width: window.innerWidth,
-      height: window.innerHeight,
-    }
-  }, selectors)
-
-  if (!box) return shot(page, name)
-
-  const x = Math.max(0, Math.floor(box.left - pad))
-  const y = Math.max(0, Math.floor(box.top - pad))
-  const clip = {
-    x,
-    y,
-    width: Math.min(box.width - x, Math.ceil(box.right - x + pad)),
-    height: Math.min(box.height - y, Math.ceil(box.bottom - y + pad)),
-  }
-  await page.screenshot({ path: `${OUT}/${name}.png`, clip })
-  console.log(`  ${name}.png`)
-}
-
-/** The app chrome plus the device, which is the frame most shots want. */
-const APP = ['.fret-chrome', '.fret-panel']
-
-/**
- * Shrinks the viewport to the height its content actually needs.
- *
- * The device is vertically centred in the window, so a tall viewport pushes it
- * into the middle of a large empty field. Fitting first means the clip that
- * follows has almost nothing to trim.
- */
-async function fitViewport(page, selectors, pad = 40) {
-  const size = page.viewportSize()
-  const needed = await page.evaluate((list) => {
-    const rects = list
-      .map((selector) => document.querySelector(selector))
-      .filter(Boolean)
-      .map((element) => element.getBoundingClientRect())
-    if (rects.length === 0) return null
-    return Math.max(...rects.map((r) => r.bottom)) - Math.min(...rects.map((r) => r.top))
-  }, selectors)
-  if (!needed) return
-  await page.setViewportSize({ width: size.width, height: Math.ceil(needed + pad * 2) })
-  await page.waitForTimeout(250)
-}
-
-/**
- * Frames a sheet shot: the sheet itself plus enough of the dimmed device
- * behind it to show what it is covering, rather than a screen of backdrop.
- */
-async function shotSheet(page, name) {
-  await settle(page)
-  const box = await page.evaluate(() => {
-    const sheet = document.querySelector('.fret-sheet')?.getBoundingClientRect()
-    if (!sheet) return null
-    const list = document.querySelector('.fret-list')?.getBoundingClientRect()
-    return {
-      right: sheet.right,
-      // Stop below the list rather than at the sheet's full height, which is
-      // mostly empty once the transfers run out.
-      bottom: list ? list.bottom + 40 : sheet.bottom,
-      width: window.innerWidth,
-      height: window.innerHeight,
-    }
-  })
-  if (!box) return shot(page, name)
-  await page.screenshot({
-    path: `${OUT}/${name}.png`,
-    clip: {
-      x: 0,
-      y: 0,
-      width: Math.min(box.width, box.right + 400),
-      height: Math.min(box.height, box.bottom),
-    },
-  })
-  console.log(`  ${name}.png`)
-}
-
+/** Opens a context with the demo session already established. */
 async function open({ viewport, theme = 'light', signedIn = true }) {
   const context = await browser.newContext({
     viewport,
@@ -182,25 +85,23 @@ function payload(name, bytes) {
 }
 
 async function captureSignIn() {
-  const context = await browser.newContext({ viewport: CARD, deviceScaleFactor: 2 })
+  const context = await browser.newContext({ viewport: DESKTOP, deviceScaleFactor: 2 })
   const page = await context.newPage()
   await page.goto(BASE, { waitUntil: 'networkidle' })
   await page.waitForSelector('.fret-key')
-  await fitViewport(page, ['.fret-panel'])
-  await shotFramed(page, 'signin', ['.fret-panel'])
+  await shot(page, 'signin')
   await context.close()
 }
 
 async function captureEmpty(theme) {
-  const { context, page } = await open({ viewport: DEVICE, theme })
+  const { context, page } = await open({ viewport: DESKTOP, theme })
   await page.waitForSelector('.fret-screen__title')
-  await fitViewport(page, APP)
-  await shotFramed(page, `empty-${theme}`, APP)
+  await shot(page, `empty-${theme}`)
   await context.close()
 }
 
 async function captureUploadAndReady() {
-  const { context, page } = await open({ viewport: DEVICE_TALL })
+  const { context, page } = await open({ viewport: DESKTOP_TALL })
 
   // Slow the part uploads so the rising material and the sheen are caught in
   // motion rather than already finished.
@@ -227,8 +128,7 @@ async function captureUploadAndReady() {
     undefined,
     { timeout: 90_000 },
   )
-  await fitViewport(page, APP)
-  await shotFramed(page, 'uploading', APP)
+  await shot(page, 'uploading')
 
   await page.waitForFunction(
     () => document.querySelector('.fret-screen__stripLabel')?.textContent === 'upload complete',
@@ -236,67 +136,63 @@ async function captureUploadAndReady() {
     { timeout: 180_000 },
   )
   await page.waitForTimeout(1000) // let the material finish draining
-  await fitViewport(page, APP)
-  await shotFramed(page, 'ready', APP)
+  await shot(page, 'ready')
 
   await context.close()
 }
 
 async function captureSheet(theme) {
-  const { context, page } = await open({ viewport: WIDE, theme })
+  const { context, page } = await open({ viewport: DESKTOP_TALL, theme })
   await page.click('.fret-pill')
   await page.waitForTimeout(500)
   // Expand a row so the action grid shows.
   await page.locator('.fret-row__main').first().click()
   await page.waitForTimeout(400)
-  await shotSheet(page, `sheet-${theme}`)
+  await shot(page, `sheet-${theme}`)
   await context.close()
 }
 
 async function captureSettings() {
-  const { context, page } = await open({ viewport: DEVICE_TALL })
+  const { context, page } = await open({ viewport: DESKTOP_TALL })
   await page.locator('.fret-iconpill').nth(1).click()
   await page.waitForSelector('.fret-popover')
   // The superadmin block arrives with its own request.
   await page.waitForSelector('.fret-admin', { timeout: 10_000 }).catch(() => {})
-  await fitViewport(page, ['.fret-chrome', '.fret-popover'])
-  await shotFramed(page, 'settings', ['.fret-chrome', '.fret-popover'])
+  await shot(page, 'settings')
   await context.close()
 }
 
 async function captureEdit() {
-  const { context, page } = await open({ viewport: WIDE })
+  const { context, page } = await open({ viewport: DESKTOP_TALL })
   await page.click('.fret-pill')
   await page.waitForTimeout(400)
   await page.locator('.fret-row__main').first().click()
   await page.waitForTimeout(400)
-  await page.locator('.fret-action').nth(1).click()
+  await page.locator('.fret-rowaction').nth(1).click()
   await page.waitForSelector('.fret-modal')
   await shot(page, 'edit')
   await context.close()
 }
 
 async function captureRecipient() {
-  const context = await browser.newContext({ viewport: DEVICE_TALL, deviceScaleFactor: 2 })
+  const context = await browser.newContext({ viewport: DESKTOP_TALL, deviceScaleFactor: 2 })
   const page = await context.newPage()
   await page.goto(`${BASE}/client-review-oct`, { waitUntil: 'networkidle' })
   await page.waitForSelector('.fret-filelist__row')
-  await fitViewport(page, ['.fret-panel'])
-  await shotFramed(page, 'recipient', ['.fret-panel'])
+  await shot(page, 'recipient')
   await context.close()
 }
 
 async function captureRecipientLocked() {
   const context = await browser.newContext({
-    viewport: DEVICE,
+    viewport: DESKTOP,
     deviceScaleFactor: 2,
     colorScheme: 'dark',
   })
   const page = await context.newPage()
   await page.goto(`${BASE}/masters-hifi`, { waitUntil: 'networkidle' })
   await page.waitForSelector('.fret-screen__title')
-  await fitViewport(page, ['.fret-panel'])
-  await shotFramed(page, 'recipient-locked', ['.fret-panel'])
+  await shot(page, 'recipient-locked')
   await context.close()
 }
 

@@ -290,18 +290,17 @@ function Row({
         </span>
       </button>
 
+      {/*
+        A drawer in the same material as the row rather than a card of tiles
+        sitting on top of it: hairline-divided cells and mono labels, which is
+        the vocabulary the rest of the sheet already speaks.
+      */}
       <div className={`fret-rowactions${open ? ' fret-rowactions--open' : ''}`}>
-        <div className="fret-rowactions__grid">
-          <Action glyph="copy" label={t('action.copy')} onClick={onCopy} tabIndex={open ? tab : -1} />
-          <Action glyph="edit" label={t('action.edit')} onClick={onEdit} tabIndex={open ? tab : -1} />
-          <Action glyph="open" label={t('action.open')} onClick={onOpen} tabIndex={open ? tab : -1} />
-          <Action
-            glyph="delete"
-            label={t('action.delete')}
-            onClick={onDelete}
-            danger
-            tabIndex={open ? tab : -1}
-          />
+        <div className="fret-rowactions__strip">
+          <Action label={t('action.copy')} onClick={onCopy} tabIndex={open ? tab : -1} />
+          <Action label={t('action.edit')} onClick={onEdit} tabIndex={open ? tab : -1} />
+          <Action label={t('action.open')} onClick={onOpen} tabIndex={open ? tab : -1} />
+          <Action label={t('action.delete')} onClick={onDelete} danger tabIndex={open ? tab : -1} />
         </div>
       </div>
     </div>
@@ -309,13 +308,11 @@ function Row({
 }
 
 function Action({
-  glyph,
   label,
   onClick,
   danger,
   tabIndex,
 }: {
-  glyph: 'copy' | 'edit' | 'open' | 'delete'
   label: string
   onClick: () => void
   danger?: boolean
@@ -324,14 +321,11 @@ function Action({
   return (
     <button
       type="button"
-      className={`fret-action${danger ? ' fret-action--danger' : ''}`}
+      className={`fret-rowaction${danger ? ' fret-rowaction--danger' : ''}`}
       onClick={onClick}
       tabIndex={tabIndex}
     >
-      <span className={`fret-glyph fret-glyph--${glyph}`} aria-hidden="true">
-        {glyph === 'open' ? '↗' : ''}
-      </span>
-      <span className="fret-action__label">{label}</span>
+      {label}
     </button>
   )
 }

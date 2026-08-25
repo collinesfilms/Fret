@@ -450,8 +450,6 @@ Things Fret does not do, and why:
   one is configuration rather than a rewrite.
 - **2,000 files per transfer.** Not a size limit — a bound on how much work one
   request can create. Send an archive if you genuinely have more.
-- **Modern browsers only.** The interface uses `grid-template-rows`
-  interpolation (Chrome 117+, Safari 17.4+).
 
 ## License
 

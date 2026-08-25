@@ -190,9 +190,15 @@
 
 /* ---------- file list on the screen ---------- */
 
+/*
+ * The negative margin and matching padding keep the rows aligned with the rest
+ * of the screen while giving the scroll container room on every side. Without
+ * it the pulsing ring on the download buttons is clipped flat against the edge.
+ */
 .fret-filelist {
-  margin: 12px 0 2px;
-  max-height: 168px;
+  margin: 4px -10px 0;
+  padding: 8px 10px;
+  max-height: 184px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--screenLine) transparent;

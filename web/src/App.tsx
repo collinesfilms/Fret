@@ -174,7 +174,6 @@ export function App() {
         me={session.me}
         locale={locale}
         activeCount={transfers.length}
-        storageUsed={storageUsed}
         resolvedTheme={resolvedTheme}
         onToggleTheme={() => {
           const next = resolvedTheme === 'dark' ? 'light' : 'dark'
