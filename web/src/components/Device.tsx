@@ -5,7 +5,7 @@
  * keys are the only elements permitted real depth.
  */
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 
 import { translate, type Locale, type StringKey } from '../lib/i18n'
 
@@ -57,9 +57,28 @@ export function Lamp({
   )
 }
 
-/** The blinking block cursor that follows a status line. */
-export function Caret({ width = 9, height = 20 }: { width?: number; height?: number }) {
-  return <span className="fret-caret" aria-hidden="true" style={{ width, height }} />
+/**
+ * The blinking block cursor that follows a line of type.
+ *
+ * Sized from the type it sits beside rather than by hand, because hand-tuned
+ * pairs drift: at 26px the caret was noticeably short and tight, and at 20px
+ * on the recipient screen it was smaller again and sat too high. Cap height is
+ * about 0.72em and the optical centre of a line sits slightly below its
+ * geometric one, hence the nudge down.
+ */
+export function Caret({ fontSize }: { fontSize: number }) {
+  return (
+    <span
+      className="fret-caret"
+      aria-hidden="true"
+      style={{
+        width: Math.round(fontSize * 0.4),
+        height: Math.round(fontSize * 0.78),
+        marginLeft: Math.round(fontSize * 0.16),
+        transform: `translateY(${(fontSize * 0.04).toFixed(1)}px)`,
+      }}
+    />
+  )
 }
 
 export function Screen({
@@ -235,5 +254,61 @@ export function RestoreTag({
         </button>
       </div>
     </div>
+  )
+}
+
+/**
+ * The link a transfer will be reachable at, shown on the status strip.
+ *
+ * The host is there from the moment the screen is, so nothing appears out of
+ * nowhere: when an upload starts, only the slug is typed onto the end of an
+ * address that was already sitting there. A later rename flashes rather than
+ * retyping — retyping would read as a second link being minted, when what
+ * happened is that one link changed its name.
+ */
+export function LinkReadout({ host, slug }: { host: string; slug: string }) {
+  const [typed, setTyped] = useState(slug)
+  const [flash, setFlash] = useState(false)
+  const previous = useRef(slug)
+
+  useEffect(() => {
+    const before = previous.current
+    previous.current = slug
+    if (slug === before) return
+
+    if (slug === '') {
+      setTyped('')
+      return
+    }
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    // Only the first appearance is typed; a rename is a change of name, not
+    // an arrival.
+    if (before !== '' || reduced) {
+      setTyped(slug)
+      setFlash(true)
+      const done = window.setTimeout(() => setFlash(false), 620)
+      return () => window.clearTimeout(done)
+    }
+
+    let shown = 0
+    setTyped('')
+    const tick = window.setInterval(() => {
+      shown += 1
+      setTyped(slug.slice(0, shown))
+      if (shown >= slug.length) window.clearInterval(tick)
+    }, 26)
+    return () => window.clearInterval(tick)
+  }, [slug])
+
+  return (
+    <span className="fret-link">
+      <span className="fret-link__host">{host}</span>
+      {typed !== '' && (
+        <span className={`fret-link__slug${flash ? ' fret-link__slug--flash' : ''}`}>
+          /{typed}
+        </span>
+      )}
+    </span>
   )
 }

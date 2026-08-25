@@ -132,9 +132,14 @@ export function App() {
     refreshTransfers()
   }, [refreshTransfers])
 
-  const navigate = useCallback((to: string) => {
-    window.history.pushState({}, '', to)
-    setPath(to)
+  /**
+   * Opens a recipient link the way you would send it: in its own tab.
+   *
+   * Previewing in place replaced the transfer you were working on, and coming
+   * back meant the browser's back button rather than closing what you opened.
+   */
+  const openRecipient = useCallback((target: string) => {
+    window.open(`/${target}`, '_blank', 'noopener,noreferrer')
   }, [])
 
   const openEditor = (transfer: TransferSummary, action: EngagedAction['action']) => {
@@ -218,7 +223,7 @@ export function App() {
         me={session.me}
         locale={locale}
         onTransfersChanged={refreshTransfers}
-        onOpenRecipient={(target) => navigate(`/${target}`)}
+        onOpenRecipient={openRecipient}
       />
 
       <TransfersSheet
@@ -231,10 +236,7 @@ export function App() {
         onClose={() => setSheetOpen(false)}
         onCopy={copyLink}
         onEdit={(transfer) => openEditor(transfer, 'edit')}
-        onOpen={(target) => {
-          setSheetOpen(false)
-          navigate(`/${target}`)
-        }}
+        onOpen={openRecipient}
         onDelete={(transfer) => openEditor(transfer, 'delete')}
       />
 

@@ -116,9 +116,15 @@
   from { opacity: 0; transform: translateY(-6px) scale(0.985); }
   to { opacity: 1; transform: none; }
 }
+/*
+ * The sweep must start and finish entirely off the screen, or the band pops
+ * into existence part-way across. The band is 42% of the screen wide, so the
+ * offsets are expressed against its own width: -120% puts its trailing edge
+ * just past the left edge, and 260% carries its leading edge past the right.
+ */
 @keyframes fretSheen {
-  0% { transform: translateX(-70%); }
-  100% { transform: translateX(170%); }
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(260%); }
 }
 @keyframes fretLamp {
   0%, 100% { opacity: 0.35; }

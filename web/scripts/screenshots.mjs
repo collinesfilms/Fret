@@ -1,10 +1,13 @@
 /**
  * Captures the screenshots used in the README.
  *
- * Start the demo server first, then run this:
+ * Start a *fresh* demo server first, then run this:
  *
  *   go run ./cmd/fret-demo
  *   cd web && npm run screenshots
+ *
+ * Fresh matters: the captures create and rename transfers, so a second run
+ * against the same process collides with the names the first one claimed.
  *
  * Every image comes from the real application driven through a real browser —
  * nothing here is a mockup, so re-running it after a design change refreshes
@@ -36,12 +39,31 @@ let browser
  * caret pinned on so a shot cannot land in the half of the cycle where it is
  * invisible.
  */
-async function settle(page, ms = 500) {
+async function settle(page, ms = 400) {
   await page.addStyleTag({
     content: '.fret-caret { animation: none !important; opacity: 1 !important; }',
   })
   await page.evaluate(() => document.fonts.ready)
   await page.waitForTimeout(ms)
+
+  // Jump every finite animation to its end.
+  //
+  // The device fades in on mount, and mount happens only after the app has
+  // fetched its config and session — so on a slow load the entry animation is
+  // still running when a fixed wait expires, and the shot catches a
+  // half-transparent panel with a washed-out screen. Waiting longer only moves
+  // the race; this ends it. Infinite animations (lamps, the sheen) cannot
+  // finish and are left running, which is what keeps them looking alive.
+  await page.evaluate(() => {
+    for (const animation of document.getAnimations()) {
+      try {
+        animation.finish()
+      } catch {
+        // Infinite: nothing to finish.
+      }
+    }
+  })
+  await page.waitForTimeout(120)
 }
 
 async function shot(page, name) {

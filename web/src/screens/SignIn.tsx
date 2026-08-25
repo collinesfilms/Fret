@@ -65,7 +65,6 @@ export function SignIn({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 2,
                 marginTop: 10,
                 fontSize: 26,
                 fontWeight: 500,
@@ -74,7 +73,7 @@ export function SignIn({
               }}
             >
               {t('signin.signedOut')}
-              <Caret width={9} height={20} />
+              <Caret fontSize={26} />
             </div>
             <div className="fret-screen__hint" style={{ marginTop: 14 }}>
               {t('signin.noAccounts')}

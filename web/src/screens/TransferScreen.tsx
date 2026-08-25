@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Field, Grow, Segmented, SettingsRow } from '../components/Controls'
-import { Key, Panel, RestoreTag, Screen, Strip, Vent } from '../components/Device'
+import { Key, LinkReadout, Panel, RestoreTag, Screen, Strip, Vent } from '../components/Device'
 import { api, ApiError, type Expiry, type Me, type Resumable, type Transfer } from '../lib/api'
 import { filterSlug, formatBytes, rate, remaining, splitBytes } from '../lib/format'
 import { fileCount, translate, type Locale, type StringKey } from '../lib/i18n'
@@ -56,8 +56,6 @@ export function TransferScreen({
   const [copied, setCopied] = useState(false)
   const [slugError, setSlugError] = useState<string | null>(null)
 
-  const [resumable, setResumable] = useState<Resumable | null>(null)
-  const [awaitingResume, setAwaitingResume] = useState(false)
 
   const uploadRef = useRef<Upload | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -73,16 +71,6 @@ export function TransferScreen({
       window.clearTimeout(copyTimer.current)
       uploadRef.current?.cancel()
     }
-  }, [])
-
-  // Offer to resume anything left unfinished by a previous session.
-  useEffect(() => {
-    api
-      .resumable()
-      .then(({ transfers }) => {
-        if (transfers.length > 0) setResumable(transfers[0])
-      })
-      .catch(() => setResumable(null))
   }, [])
 
   const startUpload = useCallback(
@@ -122,8 +110,6 @@ export function TransferScreen({
       }
 
       setTransfer(created)
-      setResumable(null)
-      setAwaitingResume(false)
       const initial: Settings = { slug: created.slug, password: '', expiry: created.expiry }
       setSettings(initial)
       setCommitted(initial)
@@ -157,37 +143,48 @@ export function TransferScreen({
     [onTransfersChanged, t],
   )
 
+  /**
+   * Finds an unfinished transfer these exact files belong to.
+   *
+   * Resuming is decided here rather than announced on arrival. An unfinished
+   * upload used to be advertised the moment the app loaded, which meant a
+   * prompt that could not be dismissed, survived every reload, and appeared on
+   * devices that had never started it — the files it needed were on a
+   * different machine. Matching at drop time removes all three: you can only
+   * match by dropping the files, and dropping the files is the only thing that
+   * makes resuming possible.
+   */
+  const findResumable = async (picked: File[]): Promise<Resumable | undefined> => {
+    try {
+      const { transfers } = await api.resumable()
+      return transfers.find((entry) => matchResumable(entry, picked) !== null)
+    } catch {
+      return undefined
+    }
+  }
+
+  const begin = async (picked: File[]) => {
+    if (picked.length === 0) return
+    startUpload(picked, await findResumable(picked))
+  }
+
   const onPick = (files: FileList | null) => {
     if (!files || files.length === 0) return
-    const picked = Array.from(files)
-    startUpload(picked, awaitingResume && resumable ? resumable : undefined)
+    begin(Array.from(files))
   }
 
   const onDrop = async (event: React.DragEvent) => {
     event.preventDefault()
     setDragging(false)
-    const picked = await readDrop(event.dataTransfer)
-    startUpload(picked, awaitingResume && resumable ? resumable : undefined)
+    begin(await readDrop(event.dataTransfer))
   }
 
   /**
-   * Retries a failed upload through the resume path, so the parts that already
-   * landed are not sent a second time. The browser cannot reach back into the
-   * filesystem on its own, so this asks for the same files again.
+   * Retries a failed upload. The browser cannot reach back into the filesystem
+   * on its own, so this asks for the same files again; whatever already landed
+   * is matched and skipped by the same path a resume takes.
    */
-  const retry = async () => {
-    try {
-      const { transfers } = await api.resumable()
-      const match = transfers.find((entry) => entry.id === transfer?.id) ?? transfers[0]
-      if (match) {
-        setResumable(match)
-        setAwaitingResume(true)
-      }
-    } catch {
-      // Falling through still opens the picker, which starts a fresh transfer.
-    }
-    inputRef.current?.click()
-  }
+  const retry = () => inputRef.current?.click()
 
   const reset = () => {
     uploadRef.current?.cancel()
@@ -336,59 +333,42 @@ export function TransferScreen({
       {/* The tag is a sibling of the panel so it can pass behind it. */}
       <div className="fret-deck">
         <Panel>
+          {/*
+            The screen only accepts files while it is empty. Once a transfer
+            exists it is a readout, and a stray click opening a file picker —
+            quietly abandoning the transfer on screen — is not what anyone
+            meant by clicking it.
+          */}
           <Screen
           dragging={dragging}
           fill={phase === 'empty' ? 0 : draining ? 0 : percent}
           draining={draining}
           sheen={uploading}
-          onClick={() => inputRef.current?.click()}
-          onDragOver={(e) => {
-            e.preventDefault()
-            if (!dragging) setDragging(true)
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={onDrop}
-          label={t('app.drop')}
+          onClick={phase === 'empty' ? () => inputRef.current?.click() : undefined}
+          onDragOver={
+            phase === 'empty'
+              ? (e) => {
+                  e.preventDefault()
+                  if (!dragging) setDragging(true)
+                }
+              : undefined
+          }
+          onDragLeave={phase === 'empty' ? () => setDragging(false) : undefined}
+          onDrop={phase === 'empty' ? onDrop : undefined}
+          label={phase === 'empty' ? t('app.drop') : undefined}
         >
           {phase === 'empty' && (
             <>
               <Strip
                 color={dragging ? 'var(--accent)' : 'var(--ok)'}
                 label={dragging ? t('app.releaseStrip') : t('app.ready')}
-                right={`s3 · ${me.region}`}
+                right={<LinkReadout host={me.publicHost} slug="" />}
               />
               <div className="fret-screen__title">
                 {dragging ? t('app.release') : t('app.drop')}
               </div>
               <div className="fret-screen__hint">{t('app.browse')}</div>
 
-              {/* An unfinished upload is offered here rather than as a dialog. */}
-              {resumable && (
-                <div
-                  className="fret-screen__hint"
-                  style={{ marginTop: 12, color: 'var(--accent)' }}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setAwaitingResume(true)
-                    inputRef.current?.click()
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.stopPropagation()
-                      setAwaitingResume(true)
-                      inputRef.current?.click()
-                    }
-                  }}
-                >
-                  {t('app.resumable')} · {resumable.slug} ·{' '}
-                  {formatBytes(resumable.uploadedBytes)} of {formatBytes(resumable.totalBytes)}
-                  <div style={{ color: 'var(--screenDim)', marginTop: 3 }}>
-                    {t('app.resumeHint')}
-                  </div>
-                </div>
-              )}
             </>
           )}
 
@@ -404,7 +384,7 @@ export function TransferScreen({
                       : t('app.complete')
                 }
                 pulse={uploading}
-                right={committed.slug}
+                right={<LinkReadout host={me.publicHost} slug={committed.slug} />}
               />
 
               <div className="fret-filelist">
@@ -454,8 +434,14 @@ export function TransferScreen({
           collapses again on New. The reverse is as much a part of the gesture
           as the growth.
         */}
+        {/*
+          The vent belongs to the device, not to the settings: it is there when
+          the panel holds nothing but the screen, which is what makes the empty
+          state read as an object rather than a card.
+        */}
+        <Vent />
+
         <Grow open={phase !== 'empty'}>
-          <Vent />
           <div className="fret-settings">
             {/* Text fields commit when you leave them, or on Enter. */}
             <SettingsRow label={t('settings.link')}>

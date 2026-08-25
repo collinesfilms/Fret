@@ -128,7 +128,7 @@ export function Recipient({
               <Strip color="var(--accent)" label={t('recipient.lockedStrip')} />
               <div className="fret-screen__title">
                 {t('recipient.locked')}
-                <Caret width={8} height={16} />
+                <Caret fontSize={20} />
               </div>
               <form onSubmit={unlock} style={{ marginTop: 16, display: 'flex', gap: 8 }}>
                 <Field
@@ -184,7 +184,7 @@ function ReadyView({ transfer, locale }: { transfer: PublicTransfer; locale: Loc
           {transfer.senderName
             ? t('recipient.sent', { name: transfer.senderName, count })
             : t('recipient.sentAnon', { count })}
-          <Caret width={8} height={16} />
+          <Caret fontSize={20} />
         </div>
 
         <div className="fret-filelist" style={{ marginTop: 8, maxHeight: 260 }}>
@@ -193,16 +193,22 @@ function ReadyView({ transfer, locale }: { transfer: PublicTransfer; locale: Loc
               <span className="fret-filelist__name">{file.name}</span>
               <span className="fret-filelist__size">{formatBytes(file.size)}</span>
               {/*
+                Per-file buttons only earn their place when there is a choice to
+                make. With one file the key below already does it, and a second
+                control for the same act is just another thing to read.
+
                 A single file goes straight to storage over a presigned URL, so
                 the bytes never pass through the Fret server.
               */}
-              <a
-                href={fileUrl(transfer.slug, file.id)}
-                className="fret-dl"
-                aria-label={`Download ${file.name}`}
-              >
-                ↓
-              </a>
+              {!single && (
+                <a
+                  href={fileUrl(transfer.slug, file.id)}
+                  className="fret-dl"
+                  aria-label={`Download ${file.name}`}
+                >
+                  ↓
+                </a>
+              )}
             </div>
           ))}
         </div>

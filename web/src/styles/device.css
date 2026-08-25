@@ -94,7 +94,8 @@
   color: var(--screenFg);
   display: flex;
   align-items: center;
-  gap: 2px;
+  /* The caret carries its own leading margin, sized to the type. */
+  gap: 0;
 }
 
 .fret-screen__hint {
@@ -560,4 +561,40 @@
   .fret-tag__note {
     display: none;
   }
+}
+
+/*
+ * The link readout on the status strip. The host is dimmer than the slug: the
+ * slug is the part that changes, the part you type, and the part worth reading.
+ */
+.fret-link {
+  display: inline-flex;
+  align-items: baseline;
+  min-width: 0;
+  /* The strip uppercases its labels. A link is not a label — it is the thing
+     you are about to send, and slugs are lowercase. Show what it really is. */
+  text-transform: none;
+  letter-spacing: 0.08em;
+}
+
+.fret-link__host {
+  color: var(--screenDim);
+}
+
+.fret-link__slug {
+  color: var(--screenFg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A rename flashes the new name up in accent, then settles. */
+@keyframes fretLinkFlash {
+  0% { color: var(--accent); }
+  35% { color: var(--accent); }
+  100% { color: var(--screenFg); }
+}
+
+.fret-link__slug--flash {
+  animation: fretLinkFlash 0.62s ease-out both;
 }
