@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/collinesfilms/fret/internal/auth"
+	"github.com/collinesfilms/fret/internal/slug"
 )
 
 // sampleFiles mirrors a real drop: a large-ish media file that spans multiple
@@ -748,6 +749,68 @@ func TestSharedSlugIsWrittenOnce(t *testing.T) {
 
 	if !bytes.Contains(body, []byte(`"sharedSlug":"`+original+`"`)) {
 		t.Errorf("the shared slug moved after a rename: %s", body)
+	}
+}
+
+// TestMintSlugRedrawsWithoutDisturbingAnythingElse covers the Shuffle beside
+// the link field. Drawing a new name is the one settings change the browser
+// makes without sending a value, so nothing it does not send may move.
+func TestMintSlugRedrawsWithoutDisturbingAnythingElse(t *testing.T) {
+	h := newHarness(t)
+	transfer := h.completeTransfer(t)
+	original := transfer.Slug
+
+	if resp, body := h.do(http.MethodPatch, "/api/transfers/"+transfer.ID,
+		map[string]any{"password": "colour", "expiry": "30d"}); resp.StatusCode != http.StatusOK {
+		t.Fatalf("setting up: %d %s", resp.StatusCode, body)
+	}
+
+	resp, body := h.do(http.MethodPost, "/api/transfers/"+transfer.ID+"/slug", nil)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("minting a slug: %d %s", resp.StatusCode, body)
+	}
+
+	minted := decodeInto[struct {
+		Slug     string `json:"slug"`
+		Expiry   string `json:"expiry"`
+		Password bool   `json:"hasPassword"`
+	}](t, body)
+	if minted.Slug == original {
+		t.Errorf("the name did not change: %s", minted.Slug)
+	}
+	if err := slug.Validate(minted.Slug); err != nil {
+		t.Errorf("minted an invalid slug %q: %v", minted.Slug, err)
+	}
+	if !minted.Password || minted.Expiry != "30d" {
+		t.Errorf("a redraw disturbed the settings beside it: %s", body)
+	}
+
+	// The link has to follow the name, in both directions.
+	if gone, _ := h.public(http.MethodGet, "/api/t/"+original, nil); gone.StatusCode != http.StatusNotFound {
+		t.Errorf("the old link still resolves: %d", gone.StatusCode)
+	}
+	if live, _ := h.public(http.MethodGet, "/api/t/"+minted.Slug, nil); live.StatusCode != http.StatusOK {
+		t.Errorf("the new link does not resolve: %d", live.StatusCode)
+	}
+}
+
+// A redraw is a settings change like any other, so it answers to the same
+// ownership check rather than to none.
+func TestMintSlugRefusesAnotherUsersTransfer(t *testing.T) {
+	h := newHarness(t)
+	transfer := h.completeTransfer(t)
+
+	other, err := h.db.UpsertUser(t.Context(), "sub-3", "third@else.test", "Third Party")
+	if err != nil {
+		t.Fatal(err)
+	}
+	original := h.session
+	h.session = h.newSession(t, other.ID)
+	defer func() { h.session = original }()
+
+	resp, _ := h.do(http.MethodPost, "/api/transfers/"+transfer.ID+"/slug", nil)
+	if resp.StatusCode != http.StatusNotFound {
+		t.Errorf("another account redrew a link: %d", resp.StatusCode)
 	}
 }
 

@@ -466,6 +466,15 @@
  * child, so it can pass behind it on the way out: a negative z-index child
  * paints above its parent's background and would slide over the device
  * instead of from under it.
+ *
+ * The face is not plain body colour. Two hairline gradients at deliberately
+ * odd angles give it a grain — at those angles the lines never come into
+ * register with the pixel grid, so the weave cannot moiré. The alphas are
+ * deliberately near the floor: the whole span of the texture is about ten
+ * levels of lightness. Any louder and it is corduroy rather than material,
+ * which is the mistake this was written to avoid — the drawer should look
+ * like the same stock as the panel, finished differently, not like a
+ * different object in a different colour.
  */
 .fret-tray {
   position: absolute;
@@ -473,11 +482,18 @@
   right: 14px;
   top: 100%;
   z-index: 1;
-  background: var(--body);
+  background-color: var(--body);
+  background-image:
+    repeating-linear-gradient(94deg, rgba(255, 255, 255, 0.055) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(86deg, rgba(35, 33, 31, 0.016) 0 1px, transparent 1px 9px),
+    linear-gradient(180deg, rgba(35, 33, 31, 0.03) 0%, transparent 42%);
   border: 1px solid var(--edge);
   border-top: none;
   border-radius: 0 0 18px 18px;
-  box-shadow: 0 18px 34px rgba(35, 33, 31, 0.13);
+  /* The panel's bottom edge stands proud of the drawer front, so it casts
+     down onto it. The outer shadow is the drawer's own, on the studio. */
+  box-shadow: inset 0 7px 11px -8px rgba(35, 33, 31, 0.4),
+    0 18px 34px rgba(35, 33, 31, 0.13);
   transform: translateY(-100%);
   opacity: 0;
   pointer-events: none;
@@ -494,30 +510,110 @@
 }
 
 :root[data-theme='dark'] .fret-tray {
-  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.5);
+  background-image:
+    repeating-linear-gradient(94deg, rgba(255, 255, 255, 0.02) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(86deg, rgba(0, 0, 0, 0.07) 0 1px, transparent 1px 9px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, transparent 42%);
+  box-shadow: inset 0 7px 11px -8px rgba(0, 0, 0, 0.75),
+    0 18px 34px rgba(0, 0, 0, 0.5);
 }
 
 .fret-tray__inner {
-  padding: 16px 18px 18px;
+  padding: 15px 18px 16px;
 }
 
-/* A shallow lip along the top edge, so the drawer reads as a separate piece
-   of the object rather than a continuation of the panel. */
-.fret-tray__lip {
-  height: 3px;
-  margin: 0 auto 14px;
-  width: 46px;
+/*
+ * A milled finger slot, cut into the drawer front rather than sitting on it.
+ * The device rations depth to the screen, the vent and the keys — but this is
+ * the one place you would put a thumb, and a pull that is not recessed is not
+ * a pull.
+ */
+.fret-tray__pull {
+  height: 4px;
+  margin: 0 auto 13px;
+  width: 44px;
   border-radius: 999px;
-  background: var(--edge2);
-  opacity: 0.7;
+  background: var(--sunk);
+  box-shadow: inset 0 1px 2px rgba(35, 33, 31, 0.32), 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-/* ---------- per-field confirmation ---------- */
+:root[data-theme='dark'] .fret-tray__pull {
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/*
+ * The nameplate, in the corner where a case is stamped. It is the host the
+ * links live on, which is the one fact about this drawer worth engraving —
+ * and the 1px light offset below the type is what makes it read as cut into
+ * the material rather than printed on it.
+ */
+.fret-tray__mark {
+  margin-top: 13px;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 6.5px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--fg3);
+  opacity: 0.55;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+:root[data-theme='dark'] .fret-tray__mark {
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/*
+ * The contents trail the drawer rather than arriving with it. Each row starts
+ * a few pixels behind where it lands and catches up in turn, which is what
+ * makes the drawer read as carrying them out instead of the whole thing being
+ * one flat surface that faded in.
+ */
+@keyframes fretTrayRow {
+  from { opacity: 0; transform: translateY(-7px); }
+  to { opacity: 1; transform: none; }
+}
+
+.fret-tray--open .fret-tray__pull,
+.fret-tray--open .fret-settings > *,
+.fret-tray--open .fret-tray__mark {
+  animation: fretTrayRow var(--durBase) var(--easeOut) both;
+}
+
+.fret-tray--open .fret-tray__pull { animation-delay: 0.06s; }
+.fret-tray--open .fret-settings > *:nth-child(1) { animation-delay: 0.12s; }
+.fret-tray--open .fret-settings > *:nth-child(2) { animation-delay: 0.18s; }
+.fret-tray--open .fret-settings > *:nth-child(3) { animation-delay: 0.24s; }
+.fret-tray--open .fret-tray__mark { animation-delay: 0.3s; }
+
+/*
+ * On a narrow screen the 14px inset either side is a visible slice of the
+ * width rather than a detail, so the drawer runs the full width of the device
+ * and takes the panel's own corner radius.
+ */
+@media (max-width: 640px) {
+  .fret-tray {
+    left: 0;
+    right: 0;
+    border-radius: 0 0 20px 20px;
+  }
+
+  .fret-tray__inner {
+    padding: 14px 14px 15px;
+  }
+}
+
+/* ---------- per-field confirmation and trailing actions ---------- */
 
 /*
  * Nothing is saved explicitly, so each field has to say for itself that it
- * took. The border goes green briefly and a tick fades in at the trailing
- * edge — enough to notice, not enough to interrupt.
+ * took: the border goes green briefly and a tick fades in — enough to notice,
+ * not enough to interrupt.
+ *
+ * The tick shares the trailing edge with the field's action, in one cluster
+ * rather than as two things competing for the same corner. The input's own
+ * right padding is measured from that cluster, so a longer label in another
+ * language moves the text out of its way instead of running under it.
  */
 .fret-field__wrap {
   position: relative;
@@ -528,17 +624,24 @@
   border-color: var(--ok);
 }
 
-.fret-field__tick {
+.fret-field__trail {
   position: absolute;
-  right: 11px;
+  right: 8px;
   top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.fret-field__tick {
   width: 9px;
   height: 5px;
   border-left: 1.5px solid var(--ok);
   border-bottom: 1.5px solid var(--ok);
-  transform: translateY(-70%) rotate(-45deg);
+  transform: translateY(-2px) rotate(-45deg);
   opacity: 0;
-  pointer-events: none;
   transition: opacity var(--durFast) ease;
 }
 
@@ -546,17 +649,17 @@
   opacity: 1;
 }
 
-/* ---------- a field's trailing action ---------- */
-
 /*
- * Clearing a password had no affordance at all: you had to know that emptying
- * the field removed the protection.
+ * A field's trailing action.
+ *
+ * Both of these are things you would otherwise have to know: that emptying
+ * the password box is what removes the protection, and that a link you did
+ * not choose can be drawn again. Disabled it stays where it is rather than
+ * vanishing — a control that appears and disappears teaches nothing, and the
+ * field would resize under the cursor every time the value emptied.
  */
-.fret-field__clear {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
+.fret-field__action {
+  pointer-events: auto;
   background: var(--body);
   border: 1px solid var(--edge);
   border-radius: 7px;
@@ -567,22 +670,42 @@
   text-transform: uppercase;
   color: var(--fg3);
   cursor: pointer;
-  transition: color var(--durFast) ease, border-color var(--durFast) ease;
+  white-space: nowrap;
+  transition: color var(--durFast) ease, border-color var(--durFast) ease,
+    background-color var(--durFast) ease, transform var(--durPress) var(--easeSnap);
 }
 
-.fret-field__clear:hover {
-  color: var(--accent);
+.fret-field__action:hover:not(:disabled) {
+  color: var(--fg);
   border-color: var(--edge2);
+}
+
+.fret-field__action:active:not(:disabled) {
+  transform: translateY(1px);
+  background: var(--sunk);
+}
+
+.fret-field__action:disabled {
+  color: var(--fg3);
+  opacity: 0.42;
+  cursor: default;
 }
 
 /* ---------- the slug's consequence ---------- */
 
 /*
- * Shown while the link field has focus and the link has already been sent.
- * It states the consequence at the moment the consequence is in play, which
- * is what the kraft tag was doing from across the device with a button
- * attached. The name stays reserved either way, so it can simply be typed
- * back; that no longer needs a control of its own.
+ * Shown in the edit modal once the field differs from the name that was
+ * handed out. It states the consequence at the moment the consequence is in
+ * play, which is what the kraft tag was doing from across the device with a
+ * button attached.
+ *
+ * This one does interpolate grid-template-rows, which the device's own growth
+ * deliberately does not — that panel measures its height instead, because an
+ * engine too old to animate the property snaps the whole device open and
+ * there is no way to detect it in advance. The trade is different at this
+ * size: a line of warning text that appears instantly instead of easing in is
+ * an unremarkable fallback, and it is never the difference between reading
+ * the warning and missing it.
  */
 .fret-warn {
   display: grid;

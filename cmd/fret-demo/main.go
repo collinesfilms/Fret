@@ -334,7 +334,15 @@ func createSeededTransfer(session string, entry seedTransfer) error {
 	if entry.password != "" {
 		patch["password"] = entry.password
 	}
-	return call(session, http.MethodPatch, "/api/transfers/"+created.ID, patch, nil)
+	if err := call(session, http.MethodPatch, "/api/transfers/"+created.ID, patch, nil); err != nil {
+		return err
+	}
+
+	// Seeded transfers are history, and history means links that were sent. It
+	// has to come after the rename, because the shared name is whatever the
+	// slug is at the moment it is recorded — and it is what makes renaming one
+	// of these in the edit modal carry a consequence, as it would in life.
+	return call(session, http.MethodPost, "/api/transfers/"+created.ID+"/shared", nil, nil)
 }
 
 // filler produces deterministic bytes so seeded files are not all identical.

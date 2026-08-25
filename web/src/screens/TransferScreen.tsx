@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Consequence, Grow, LiveField, Segmented, SettingsRow, Tray } from '../components/Controls'
+import { Grow, LiveField, Segmented, SettingsRow, Tray } from '../components/Controls'
 import { Key, LinkReadout, Panel, Screen, Strip, Vent } from '../components/Device'
 import { api, ApiError, type Expiry, type Me, type Resumable, type Transfer } from '../lib/api'
 import { filterSlug, formatBytes, rate, remaining, splitBytes } from '../lib/format'
@@ -58,9 +58,17 @@ export function TransferScreen({
   const [trayOpen, setTrayOpen] = useState(false)
   /** Which field last committed, so it can confirm itself briefly. */
   const [confirmed, setConfirmed] = useState<keyof Settings | null>(null)
-  const [slugFocused, setSlugFocused] = useState(false)
   /** True for a moment after an upload lands, to play the completion once. */
   const [justLanded, setJustLanded] = useState(false)
+  /*
+   * The last name the server drew, so a typed one can be told from a minted
+   * one. Without it there is no way to know whether the field holds a choice
+   * worth keeping, and the trailing action cannot decide whether it is
+   * offering another draw or a way back.
+   */
+  const [generated, setGenerated] = useState('')
+  /** Measured, so the deck can make room for the drawer and stay centred. */
+  const [trayHeight, setTrayHeight] = useState(0)
 
 
   const uploadRef = useRef<Upload | null>(null)
@@ -121,6 +129,7 @@ export function TransferScreen({
       const initial: Settings = { slug: created.slug, password: '', expiry: created.expiry }
       setSettings(initial)
       setCommitted(initial)
+      setGenerated(created.slug)
       setPhase('uploading')
       setProgress({
         uploaded: 0,
@@ -207,6 +216,7 @@ export function TransferScreen({
     setPhase('empty')
     setTrayOpen(false)
     setTransfer(null)
+    setGenerated('')
     setProgress(null)
     setDraining(false)
     setError(null)
@@ -292,7 +302,38 @@ export function TransferScreen({
     [transfer, committed, confirm, onTransfersChanged, t],
   )
 
-  const alreadySent = (transfer?.sharedSlug ?? '') !== ''
+  /*
+   * A name the user typed is a decision; a name the server drew is not. The
+   * trailing action on the link field offers whichever of the two is missing:
+   * another draw while the name is still the machine's, and a way back to it
+   * once it is yours.
+   */
+  const isCustom = generated !== '' && committed.slug !== generated
+
+  const drawSlug = async () => {
+    if (!transfer) return
+    setSlugError(null)
+    try {
+      const updated = await api.mintSlug(transfer.id)
+      setTransfer(updated)
+      setGenerated(updated.slug)
+      setSettings((current) => ({ ...current, slug: updated.slug }))
+      setCommitted((current) => ({ ...current, slug: updated.slug }))
+      confirm('slug')
+      onTransfersChanged()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('error.generic'))
+    }
+  }
+
+  const restoreDrawn = () => {
+    setSettings((current) => ({ ...current, slug: generated }))
+    setSlugError(null)
+    commit({ slug: generated })
+  }
+
+  const hasPassword = settings.password !== '' || Boolean(transfer?.hasPassword)
+
   const uploading = phase === 'uploading'
   const percent = Math.floor(progress?.percent ?? 0)
 
@@ -341,8 +382,21 @@ export function TransferScreen({
         onChange={(e) => onPick(e.target.files)}
       />
 
-      {/* The tag is a sibling of the panel so it can pass behind it. */}
-      <div className="fret-deck">
+      {/*
+        The drawer is a sibling of the panel so it can pass behind it, and it
+        is positioned out of flow — so the deck reserves its height below
+        itself instead. The stage centres the deck, which means reserving the
+        space is also what lifts the device: the panel rises by half the
+        drawer as it comes out, and the object as a whole stays centred.
+      */}
+      <div
+        className="fret-deck"
+        style={
+          {
+            '--trayH': `${trayOpen && phase !== 'empty' ? trayHeight : 0}px`,
+          } as React.CSSProperties
+        }
+      >
         <Panel settled={justLanded}>
           {/*
             The screen only accepts files while it is empty. Once a transfer
@@ -490,7 +544,17 @@ export function TransferScreen({
         </Grow>
         </Panel>
 
-        <Tray open={trayOpen && phase !== 'empty'}>
+        {/*
+          The drawer's own settings. No consequence is stated here: this device
+          only ever holds a transfer that is arriving, so its name has not been
+          anywhere yet. Renaming something already sent happens in the edit
+          modal, and the warning lives there with it.
+        */}
+        <Tray
+          open={trayOpen && phase !== 'empty'}
+          label={me.publicHost}
+          onHeight={setTrayHeight}
+        >
           <div className="fret-settings">
             <SettingsRow label={t('settings.link')}>
               <LiveField
@@ -501,21 +565,17 @@ export function TransferScreen({
                   setSettings({ ...settings, slug: filterSlug(e.target.value) })
                   setSlugError(null)
                 }}
-                onFocus={() => setSlugFocused(true)}
-                onBlur={() => {
-                  setSlugFocused(false)
-                  commit({ slug: settings.slug })
-                }}
+                onBlur={() => commit({ slug: settings.slug })}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') e.currentTarget.blur()
                   if (e.key === 'Escape') setSettings({ ...settings, slug: committed.slug })
                 }}
+                action={{
+                  label: isCustom ? t('settings.slugReset') : t('settings.slugDraw'),
+                  onClick: isCustom ? restoreDrawn : drawSlug,
+                  title: isCustom ? t('settings.slugResetHint') : t('settings.slugDrawHint'),
+                }}
                 aria-label={t('settings.link')}
-                below={
-                  <Consequence open={slugFocused && alreadySent}>
-                    {t('settings.linkConsequence')}
-                  </Consequence>
-                }
               />
             </SettingsRow>
 
@@ -530,14 +590,14 @@ export function TransferScreen({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') e.currentTarget.blur()
                 }}
-                onClear={
-                  settings.password !== '' || transfer?.hasPassword
-                    ? () => {
-                        setSettings({ ...settings, password: '' })
-                        commit({ password: '' })
-                      }
-                    : undefined
-                }
+                action={{
+                  label: t('settings.passwordClear'),
+                  disabled: !hasPassword,
+                  onClick: () => {
+                    setSettings({ ...settings, password: '' })
+                    commit({ password: '' })
+                  },
+                }}
                 aria-label={t('settings.password')}
               />
             </SettingsRow>

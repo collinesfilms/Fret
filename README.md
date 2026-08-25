@@ -108,10 +108,10 @@ Most transfers need no adjusting, so the device shows three keys and keeps the
 rest in a drawer. Nothing in it needs saving: discrete choices apply on the
 spot, text fields when you leave them, and each says for itself that it took.
 
-Renaming a live transfer kills the old link — which is the point, since you
-usually rename precisely because it went to the wrong person. Focus the field
-and it says so. The old name stays reserved to that transfer either way, so
-typing it back always works.
+The link keeps a Shuffle beside it for another draw, in whatever style you
+picked; once you type a name of your own it turns into Reset, which puts the
+generated one back. The password's Clear stays where it is when there is
+nothing to clear, greyed rather than gone.
 
 <p align="center">
   <img src="docs/screenshots/options-tray.png" alt="The options tray" width="720">
@@ -137,6 +137,12 @@ delete.
 Editing never loads a transfer back into the upload interface — it opens its
 own modal. A saved password is never sent back to the browser, so the field
 shows a placeholder rather than the stored value.
+
+This is also the only place a rename can cost anything. The upload device holds
+a transfer that is still arriving, so its name has never been anywhere; here the
+transfer is live and the name on screen may be the one in somebody's inbox. So
+the modal says what a rename will do, and offers the old name back. It stays
+reserved to that transfer for its whole life, so restoring always works.
 
 <p align="center">
   <img src="docs/screenshots/edit.png" alt="The edit modal" width="860">
@@ -171,10 +177,13 @@ the filenames, not the size, not the sender.
 ### On a phone
 
 The sheet arrives from the bottom with a grab handle instead of a close button,
-because that is what a thumb reaches for.
+because that is what a thumb reaches for. The options drawer runs the full width
+of the device at phone size, where an inset either side would be a visible slice
+of the screen rather than a detail.
 
 <p align="center">
   <img src="docs/screenshots/mobile-sheet.png" alt="The transfers sheet on mobile" width="320">
+  <img src="docs/screenshots/mobile-tray.png" alt="The options drawer on mobile" width="320">
 </p>
 
 ---

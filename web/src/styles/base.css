@@ -45,7 +45,20 @@ a:hover {
   flex: 1;
   display: flex;
   align-items: center;
+  /*
+   * The deck reserves the open drawer's height below itself, which is what
+   * lifts the device to keep the whole object centred. On a short viewport
+   * that can make the deck taller than the stage, and centred overflow spills
+   * equally in both directions — putting the top of the device above the
+   * scroll origin, where it cannot be reached. `safe` pins it to the start
+   * instead once it stops fitting. It is written as a second declaration
+   * rather than a replacement: an engine that does not know the keyword drops
+   * this line and keeps plain centring, rather than dropping align-items
+   * altogether and stretching the device to the full height.
+   */
+  align-items: safe center;
   justify-content: center;
+  overflow-y: auto;
   padding: 20px 16px 40px;
 }
 

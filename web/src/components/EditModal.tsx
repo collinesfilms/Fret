@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from 'react'
 import { api, ApiError, type Expiry, type TransferSummary } from '../lib/api'
 import { filterSlug, formatBytes, plural } from '../lib/format'
 import { translate, type Locale, type StringKey } from '../lib/i18n'
-import { Field, Segmented } from './Controls'
+import { Consequence, Field, Segmented } from './Controls'
 import { Key } from './Device'
 
 interface EditModalProps {
@@ -148,15 +148,24 @@ export function EditModal({
               }}
             />
             {/*
-              Renaming here has the same consequence as renaming on the device,
-              so it carries the same offer — inline rather than as a tag, since
-              a modal has no base to tuck one into.
+              This is the only place a rename can cost anything. The upload
+              device holds a transfer that is still arriving, so its name has
+              never been anywhere; here the transfer is live and the name on
+              screen may well be the one in somebody's inbox. So the warning
+              lives here, and only once the field actually differs from the
+              name that was handed out.
             */}
+            <Consequence open={transfer.sharedSlug !== '' && transfer.sharedSlug !== slug}>
+              {t('settings.linkConsequence')}
+            </Consequence>
             {transfer.sharedSlug !== '' && transfer.sharedSlug !== slug && (
               <div className="fret-modal__restore">
                 <div className="fret-modal__restoreText">
                   <span className="fret-modal__restoreSlug">
-                    {t('tag.sharedAs')} {transfer.sharedSlug}
+                    {t('tag.sharedAs')}{' '}
+                    {/* The label is a label; the slug is a link. Uppercasing
+                        it would show a name that does not exist. */}
+                    <span className="fret-modal__restoreName">{transfer.sharedSlug}</span>
                   </span>
                   <span className="fret-modal__restoreNote">{t('tag.note')}</span>
                 </div>

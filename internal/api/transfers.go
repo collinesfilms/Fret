@@ -167,6 +167,49 @@ func (s *Server) handleUpdateTransfer(w http.ResponseWriter, r *http.Request, u 
 	send(w, http.StatusOK, s.transferPayload(r.Context(), fresh, files))
 }
 
+// handleMintSlug draws a fresh generated name for a transfer.
+//
+// The browser cannot do this for itself. The style and the length are the
+// user's preference and live here, and a candidate is only worth showing once
+// it has been checked against every name ever handed out — which is the same
+// check, and the same redraw-on-collision, that minting the first one uses.
+func (s *Server) handleMintSlug(w http.ResponseWriter, r *http.Request, u *db.User) {
+	transfer, ok := s.ownedTransfer(w, r, u)
+	if !ok {
+		return
+	}
+
+	var err error
+	for range slugAttempts {
+		var candidate string
+		if candidate, err = slug.Generate(u.SlugStyle, u.SlugLength); err != nil {
+			break
+		}
+		// Everything but the name is passed straight back through, so drawing
+		// a new link cannot disturb the password or the expiry beside it.
+		err = s.db.UpdateTransferSettings(
+			r.Context(), transfer.ID, candidate,
+			transfer.PasswordHash, transfer.Expiry, transfer.ExpiresAt,
+		)
+		if !errors.Is(err, db.ErrSlugTaken) {
+			break
+		}
+	}
+	if err != nil {
+		s.log.Error("minting slug", "error", err, "transfer", transfer.ID)
+		fail(w, http.StatusInternalServerError, "could not draw a new link")
+		return
+	}
+
+	fresh, err := s.db.TransferByID(r.Context(), transfer.ID)
+	if err != nil {
+		fail(w, http.StatusInternalServerError, "could not draw a new link")
+		return
+	}
+	files, _ := s.db.FilesFor(r.Context(), transfer.ID)
+	send(w, http.StatusOK, s.transferPayload(r.Context(), fresh, files))
+}
+
 // handleDeleteTransfer removes a transfer and the objects behind it. An
 // in-flight upload has its multipart uploads aborted so no storage is stranded.
 func (s *Server) handleDeleteTransfer(w http.ResponseWriter, r *http.Request, u *db.User) {

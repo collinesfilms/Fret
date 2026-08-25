@@ -94,6 +94,17 @@ async function open({ viewport, theme = 'light', signedIn = true }) {
       theme,
     )
     await page.reload({ waitUntil: 'networkidle' })
+    // The app mounts only after /api/config and /api/me answer, and the demo
+    // server does occasionally reset a connection when several browser
+    // contexts hit it at once — leaving a blank page that every later locator
+    // then waits out in full. One reload covers that; a second failure is
+    // real, and says so rather than timing out somewhere less obvious.
+    try {
+      await page.waitForSelector('.fret-chrome', { timeout: 15_000 })
+    } catch {
+      await page.reload({ waitUntil: 'networkidle' })
+      await page.waitForSelector('.fret-chrome', { timeout: 15_000 })
+    }
     await page.waitForTimeout(250)
   }
   return { context, page }
@@ -164,8 +175,8 @@ async function captureUploadAndReady() {
 }
 
 /**
- * The options tray, out from under the device, with the link field focused so
- * the consequence of renaming a link that has been sent is showing.
+ * The options tray, out from under the device. The password is set, so its
+ * Clear is live while the link's action still offers another draw.
  */
 async function captureTray() {
   const { context, page } = await open({ viewport: DESKTOP_TALL })
@@ -181,10 +192,6 @@ async function captureTray() {
   )
   await page.waitForTimeout(1000)
 
-  // Copying is what makes a rename consequential.
-  await page.locator('.fret-actions__primary').click()
-  await page.waitForTimeout(600)
-
   await page.locator('.fret-actions__secondary').first().click()
   await page.waitForSelector('.fret-tray--open')
   await page.waitForTimeout(700)
@@ -192,12 +199,29 @@ async function captureTray() {
   const password = page.locator('.fret-tray input[type=password]')
   await password.fill('listen')
   await password.press('Enter')
-  await page.waitForTimeout(500)
-
-  await page.locator('.fret-tray input').first().focus()
-  await page.waitForTimeout(500)
+  await page.waitForTimeout(600)
 
   await shot(page, 'options-tray')
+  await context.close()
+}
+
+/** The same drawer at phone width, where it runs the full width of the device. */
+async function captureMobileTray() {
+  const { context, page } = await open({ viewport: MOBILE })
+
+  await page.setInputFiles('input[type=file]', [payload('reel_autumn_v4_prores.mov', 3 << 20)])
+  await page.waitForFunction(
+    () => document.querySelector('.fret-screen__stripLabel')?.textContent === 'upload complete',
+    undefined,
+    { timeout: 120_000 },
+  )
+  await page.waitForTimeout(900)
+
+  await page.locator('.fret-actions__secondary').first().click()
+  await page.waitForSelector('.fret-tray--open')
+  await page.waitForTimeout(700)
+
+  await shot(page, 'mobile-tray')
   await context.close()
 }
 
@@ -222,14 +246,29 @@ async function captureSettings() {
   await context.close()
 }
 
+/**
+ * The edit modal mid-rename. This is the one place a rename can cost
+ * anything — the transfer is live and its link has been handed out — so the
+ * shot is taken with the field changed, showing what the modal says about it.
+ */
 async function captureEdit() {
   const { context, page } = await open({ viewport: DESKTOP_TALL })
   await page.click('.fret-pill')
+  await page.waitForTimeout(400)
+
+  // Search for a seeded transfer by name rather than taking the first row.
+  // The upload shots run before this one and leave their transfers at the top
+  // of the list, and those have never been copied — so renaming one costs
+  // nothing and the modal correctly says nothing, which is not the state this
+  // shot exists to show.
+  await page.locator('.fret-sheet input.fret-field').fill('client-review-oct')
   await page.waitForTimeout(400)
   await page.locator('.fret-row__main').first().click()
   await page.waitForTimeout(400)
   await page.locator('.fret-rowaction').nth(1).click()
   await page.waitForSelector('.fret-modal')
+  await page.locator('#edit-slug').fill('autumn-review-v5')
+  await page.waitForTimeout(600)
   await shot(page, 'edit')
   await context.close()
 }
@@ -266,8 +305,42 @@ async function captureMobile() {
   await context.close()
 }
 
+/*
+ * Named so a single shot can be re-taken without the other twelve. A full run
+ * drives real uploads through a real browser and takes minutes; a design tweak
+ * that only touches one screen should not cost all of them.
+ *
+ *   npm run screenshots            every shot
+ *   npm run screenshots -- edit    just captureEdit
+ */
+const SHOTS = {
+  signin: captureSignIn,
+  'empty-light': () => captureEmpty('light'),
+  'empty-dark': () => captureEmpty('dark'),
+  // One pass through a real upload, photographed twice: uploading.png and
+  // ready.png both come out of this.
+  upload: captureUploadAndReady,
+  'options-tray': captureTray,
+  'mobile-tray': captureMobileTray,
+  'sheet-light': () => captureSheet('light'),
+  'sheet-dark': () => captureSheet('dark'),
+  settings: captureSettings,
+  edit: captureEdit,
+  recipient: captureRecipient,
+  'recipient-locked': captureRecipientLocked,
+  'mobile-sheet': captureMobile,
+}
+
 async function main() {
   await mkdir(OUT, { recursive: true })
+
+  const wanted = process.argv.slice(2)
+  const unknown = wanted.filter((name) => !(name in SHOTS))
+  if (unknown.length > 0) {
+    console.error(`unknown shot(s): ${unknown.join(', ')}`)
+    console.error(`available: ${Object.keys(SHOTS).join(', ')}`)
+    process.exit(1)
+  }
   // FRET_CHROMIUM lets an environment with a preinstalled browser point at it
   // rather than having Playwright fetch a matching build.
   browser = await chromium.launch(
@@ -275,18 +348,9 @@ async function main() {
   )
   console.log(`capturing into ${OUT}`)
 
-  await captureSignIn()
-  await captureEmpty('light')
-  await captureEmpty('dark')
-  await captureUploadAndReady()
-  await captureTray()
-  await captureSheet('light')
-  await captureSheet('dark')
-  await captureSettings()
-  await captureEdit()
-  await captureRecipient()
-  await captureRecipientLocked()
-  await captureMobile()
+  for (const [name, capture] of Object.entries(SHOTS)) {
+    if (wanted.length === 0 || wanted.includes(name)) await capture()
+  }
 
   await browser.close()
   console.log('done')

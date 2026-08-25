@@ -38,6 +38,11 @@ const en = {
   'settings.expires': 'EXPIRES',
   'settings.passwordNone': 'none',
   'settings.passwordKept': 'unchanged',
+  'settings.passwordClear': 'CLEAR',
+  'settings.slugDraw': 'SHUFFLE',
+  'settings.slugDrawHint': 'Draw another link',
+  'settings.slugReset': 'RESET',
+  'settings.slugResetHint': 'Back to the generated link',
   'settings.linkConsequence': 'the link you sent will stop working',
 
   'tag.sharedAs': 'PREVIOUS LINK',
@@ -157,6 +162,11 @@ const fr: Record<StringKey, string> = {
   'settings.expires': 'EXPIRE',
   'settings.passwordNone': 'aucun',
   'settings.passwordKept': 'inchangé',
+  'settings.passwordClear': 'EFFACER',
+  'settings.slugDraw': 'AUTRE',
+  'settings.slugDrawHint': 'Tirer un autre lien',
+  'settings.slugReset': 'RÉTABLIR',
+  'settings.slugResetHint': 'Revenir au lien généré',
   'settings.linkConsequence': 'le lien envoyé cessera de fonctionner',
 
   'tag.sharedAs': 'LIEN PRÉCÉDENT',

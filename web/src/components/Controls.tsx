@@ -136,25 +136,49 @@ export function Grow({ open, children }: { open: boolean; children: ReactNode })
  *
  * With no save button, a field has to say for itself that a change took. It
  * shows a tick and a green border for a moment after committing, an error
- * beneath when the server refuses, and — for a password — a way to clear it
- * that does not depend on knowing that emptying the box removes protection.
+ * beneath when the server refuses, and — where one applies — a trailing action
+ * that does the thing you would otherwise have to know to do by hand: draw a
+ * new link, or clear a password rather than guessing that emptying the box
+ * removes protection.
  */
 export function LiveField({
   committed,
-  onClear,
+  action,
   error,
   below,
   ...rest
 }: {
   /** Set briefly after a successful commit. */
   committed?: boolean
-  /** Renders a Clear action inside the field when given. */
-  onClear?: () => void
+  /**
+   * A button inside the trailing edge of the field. It stays in place when it
+   * has nothing to do, greyed rather than absent: a control that disappears
+   * takes the knowledge that it exists with it, and the field would resize
+   * under the cursor every time the value emptied.
+   */
+  action?: { label: string; onClick: () => void; disabled?: boolean; title?: string }
   error?: string
   /** Anything that belongs directly beneath the field, e.g. a consequence. */
   below?: ReactNode
   ref?: React.Ref<HTMLInputElement>
 } & React.InputHTMLAttributes<HTMLInputElement>) {
+  const trail = useRef<HTMLSpanElement>(null)
+  const [pad, setPad] = useState<number | undefined>(undefined)
+
+  // The label decides the width — "SHUFFLE" and "RESET" are not the same size,
+  // and neither are their translations — so the text is kept clear of the
+  // button by measuring it rather than by a constant that will be wrong in
+  // French.
+  useLayoutEffect(() => {
+    const element = trail.current
+    if (!element) return
+    const measure = () => setPad(element.offsetWidth + 16)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [action?.label])
+
   return (
     <>
       <span className="fret-field__wrap">
@@ -167,19 +191,33 @@ export function LiveField({
           autoCapitalize="off"
           autoCorrect="off"
           aria-invalid={error ? true : undefined}
-          style={onClear ? { paddingRight: 62 } : undefined}
+          style={{ paddingRight: pad }}
           {...rest}
         />
-        {onClear ? (
-          <button type="button" className="fret-field__clear" onClick={onClear} tabIndex={-1}>
-            Clear
-          </button>
-        ) : (
+        <span className="fret-field__trail" ref={trail}>
           <span
             className={`fret-field__tick${committed ? ' fret-field__tick--on' : ''}`}
             aria-hidden="true"
           />
-        )}
+          {action && (
+            <button
+              type="button"
+              className="fret-field__action"
+              onClick={action.onClick}
+              // Keeps the field from blurring under the press. Without this
+              // the blur lands first and commits whatever is half-typed, and
+              // the button can change identity between the press and the
+              // release — Shuffle becoming Reset because the commit it just
+              // caused made the name a custom one. Suppressing the focus
+              // change costs nothing: the button is still reachable by Tab.
+              onMouseDown={(event) => event.preventDefault()}
+              disabled={action.disabled}
+              title={action.title}
+            >
+              {action.label}
+            </button>
+          )}
+        </span>
       </span>
       {error && <div className="fret-field__error">{error}</div>}
       {below}
@@ -212,13 +250,45 @@ export function Consequence({ open, children }: { open: boolean; children: React
  * Rendered as a sibling of the panel rather than inside it, so it can travel
  * out from behind: a negative z-index child paints above its own parent's
  * background and would slide over the device instead of from under it.
+ *
+ * It reports its own height, because the deck above has to make room for it:
+ * the drawer is positioned out of flow, so without that the panel stays put
+ * and the whole object drifts off-centre as the drawer extends below it.
  */
-export function Tray({ open, children }: { open: boolean; children: ReactNode }) {
+export function Tray({
+  open,
+  label,
+  onHeight,
+  children,
+}: {
+  open: boolean
+  /** Engraved along the drawer's bottom edge, the way a case is marked. */
+  label?: string
+  onHeight?: (height: number) => void
+  children: ReactNode
+}) {
+  const inner = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    const element = inner.current
+    if (!element || !onHeight) return
+    const measure = () => onHeight(element.offsetHeight)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [onHeight])
+
   return (
     <div className={`fret-tray${open ? ' fret-tray--open' : ''}`} inert={!open} aria-hidden={!open}>
-      <div className="fret-tray__inner">
-        <div className="fret-tray__lip" aria-hidden="true" />
+      <div className="fret-tray__inner" ref={inner}>
+        <div className="fret-tray__pull" aria-hidden="true" />
         {children}
+        {label && (
+          <div className="fret-tray__mark" aria-hidden="true">
+            {label}
+          </div>
+        )}
       </div>
     </div>
   )

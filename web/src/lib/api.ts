@@ -207,6 +207,9 @@ export const api = {
   /** Records the name this link was handed out under. */
   markShared: (id: string) => request<Transfer>(`/api/transfers/${id}/shared`, { method: 'POST' }),
 
+  /** Draws a fresh generated name, in whatever style the user prefers. */
+  mintSlug: (id: string) => request<Transfer>(`/api/transfers/${id}/slug`, { method: 'POST' }),
+
   resumable: () => request<{ transfers: Resumable[] }>('/api/transfers/resumable'),
 
   adminStats: () => request<AdminStats>('/api/admin/stats'),

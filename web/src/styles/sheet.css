@@ -630,7 +630,19 @@
 }
 
 .fret-modal__restoreSlug {
-  color: var(--fg2);
+  color: var(--fg3);
+}
+
+/*
+ * Slugs are lowercase, and the row around this one uppercases its labels. The
+ * link readout on the device carries the same exception for the same reason:
+ * a label may be styled, a name may not — uppercasing it shows an address
+ * that does not exist.
+ */
+.fret-modal__restoreName {
+  text-transform: none;
+  letter-spacing: 0.08em;
+  color: var(--fg);
 }
 
 .fret-modal__restoreNote {

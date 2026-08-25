@@ -96,15 +96,34 @@ the screen, the vent and primary keys — everything else is flat.
   tracked out. Human-written → Schibsted Grotesk. `lib/format.ts` produces
   every mono value.
 - **Accent means one thing:** alert, uploading, unsaved, invalid. It is not a
-  focus ring (focus is `--fg2`) and not the restore tag (that is kraft
-  `--tag`, a material rather than a warning).
+  focus ring — focus is `--fg2`. The palette carries exactly two semantic
+  colours and no third.
 - **No image assets anywhere.** Every mark is divs, borders, radii, gradients
-  or a typographic character. The kraft fibre is crosshatched gradients at odd
-  angles so the weave never moirés against the pixel grid.
+  or a typographic character. Texture is crosshatched gradients at deliberately
+  odd angles — the drawer's brushed grain is at 94° and 86° — so the lines
+  never come into register with the pixel grid and moiré.
+- **Motion is a vocabulary, not a per-component decision.** Four easings and
+  five durations in `tokens.css`; nothing hardcodes a curve. `--easeTray`
+  overshoots (weight arriving), `--easeExit` never does (a thing leaving
+  should not bounce).
 - The device's growth animates a **measured height**, not
   `grid-template-rows`. That interpolation cannot be feature-detected — the
   declaration parses everywhere and simply refuses to animate on older
   engines, so `@supports` reports it as available and the panel snaps open.
+- **The options drawer is a sibling of the panel, never a child.** A negative
+  `z-index` child paints *above* its own parent's background, so a drawer that
+  tucks under the device is not expressible as nesting. It is also positioned
+  out of flow, so `.fret-deck` reserves its height as a bottom margin — which
+  is what keeps the object centred as it opens, since the stage centres the
+  deck and reserving space below is the same act as lifting the panel by half
+  of it.
+
+The kraft restore tag is gone: it was a physical object built to carry one
+sentence, and `--tag` went with it. What it said now appears in the edit modal,
+where it is actually true. The upload device only ever holds a transfer that is
+still arriving, so its name has never been anywhere and a rename there costs
+nothing — that asymmetry is the reason the warning lives in one place and not
+the other.
 
 ## Deployment gotchas
 
