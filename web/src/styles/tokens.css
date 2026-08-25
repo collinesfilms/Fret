@@ -1,0 +1,145 @@
+/*
+ * Fret's design tokens.
+ *
+ * The whole visual system is a physical object: a warm off-white body, a black
+ * inset readout screen, a perforated vent, and a small number of raised keys.
+ * Depth is a scarce accent rather than a texture — it appears only on the
+ * screen, the vent, and primary keys. Everything else is deliberately flat.
+ *
+ * Theme is applied by setting document.documentElement.dataset.theme.
+ */
+
+:root {
+  --bg: #e9e7e2;
+  --bgHi: #f8f7f4;
+
+  --body: #f4f2ee;
+  --bodyHi: #ffffff;
+  --edge: #dcd7cf;
+  --edge2: #c5bfb6;
+  --sunk: #e5e1da;
+
+  --screen: #17171a;
+  --screenLine: #25252a;
+  --screenFg: #efece5;
+  --screenDim: #7c7b80;
+
+  --fg: #23211f;
+  --fg2: #6d6862;
+  --fg3: #a49d95;
+
+  --accent: #cf3f28;
+  --ok: #3d8f57;
+
+  --key: linear-gradient(180deg, #fffefb 0%, #ece9e3 100%);
+  --keyAlt: linear-gradient(180deg, #f0eee9 0%, #dfdbd4 100%);
+  --keyShadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 2px 0 var(--edge2),
+    0 5px 10px rgba(35, 33, 31, 0.1);
+  --insetShadow: inset 0 2px 4px rgba(35, 33, 31, 0.15), inset 0 -1px 0 rgba(255, 255, 255, 0.75);
+  --lift: 0 1px 2px rgba(35, 33, 31, 0.05), 0 14px 40px rgba(35, 33, 31, 0.1);
+  --shLeft: 24px 0 60px rgba(35, 33, 31, 0.16);
+  --shUp: 0 -18px 50px rgba(35, 33, 31, 0.16);
+  --scrim: rgba(20, 18, 17, 0.26);
+  --scrimStrong: rgba(20, 18, 17, 0.34);
+  --modalShadow: 0 30px 80px rgba(20, 18, 17, 0.28);
+
+  --sans: 'Schibsted Grotesk', system-ui, -apple-system, sans-serif;
+  --mono: 'Martian Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+:root[data-theme='dark'] {
+  --bg: #151413;
+  --bgHi: #211f1d;
+
+  --body: #2b2a27;
+  --bodyHi: #3d3b37;
+  --edge: #38352f;
+  --edge2: #484338;
+  --sunk: #1e1d1b;
+
+  --screen: #0c0c0e;
+  --screenLine: #1c1c20;
+  --screenFg: #eae7e0;
+  --screenDim: #6b6a6e;
+
+  --fg: #f0ede7;
+  --fg2: #9f9992;
+  --fg3: #6e6963;
+
+  --accent: #e2503a;
+  --ok: #5cb478;
+
+  --key: linear-gradient(180deg, #3b3934 0%, #2a2825 100%);
+  --keyAlt: linear-gradient(180deg, #302e2b 0%, #221f1d 100%);
+  --keyShadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 0 #171614,
+    0 5px 12px rgba(0, 0, 0, 0.42);
+  --insetShadow: inset 0 2px 5px rgba(0, 0, 0, 0.6), inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+  --lift: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 44px rgba(0, 0, 0, 0.48);
+  --shLeft: 24px 0 60px rgba(0, 0, 0, 0.55);
+  --shUp: 0 -18px 50px rgba(0, 0, 0, 0.55);
+  --scrim: rgba(0, 0, 0, 0.42);
+  --scrimStrong: rgba(0, 0, 0, 0.52);
+  --modalShadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+}
+
+/*
+ * Animations.
+ *
+ * fretSheen sweeps the full height of the screen during an upload; fretLamp is
+ * the breathing status light; fretCaret is the hard on/off blink that reads as
+ * a terminal cursor rather than a fade.
+ */
+@keyframes fretIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fretPop {
+  from { opacity: 0; transform: translateY(-6px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fretSheen {
+  0% { transform: translateX(-70%); }
+  100% { transform: translateX(170%); }
+}
+@keyframes fretLamp {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+@keyframes fretCaret {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+@keyframes fretModalIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes fretSheetUp {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+@keyframes fretRing {
+  0%, 100% {
+    box-shadow: 0 0 0 1px var(--screenLine), 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.28), 0 0 9px 0 rgba(255, 255, 255, 0.14);
+  }
+}
+@keyframes fretSpin {
+  to { transform: rotate(360deg); }
+}
+
+/*
+ * Anyone who has asked for less motion gets a still interface: the lamps,
+ * sheen and caret stop, and the device's growth becomes instant. Layout and
+ * meaning never depend on an animation, so nothing is lost.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

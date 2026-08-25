@@ -1,0 +1,440 @@
+/*
+ * Flat controls: the app chrome pills, the settings rows, fields and the
+ * segmented control. Nothing here carries depth — that is reserved for the
+ * screen and the keys.
+ */
+
+.fret-chrome {
+  display: flex;
+  align-items: center;
+  padding: 13px 14px;
+  gap: 7px;
+}
+
+.fret-chrome__right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.fret-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--body);
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  padding: 7px 13px 7px 11px;
+  cursor: pointer;
+  color: var(--fg);
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.fret-pill:hover {
+  background: var(--sunk);
+  border-color: var(--edge2);
+}
+
+.fret-pill__count {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.fret-pill__label {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg3);
+}
+
+.fret-iconpill {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--body);
+  border: 1px solid var(--edge);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.fret-iconpill:hover {
+  background: var(--sunk);
+  border-color: var(--edge2);
+}
+
+/*
+ * The avatar expands to reveal "Sign out" rather than signing out on the first
+ * click. Signing out is cheap to undo but annoying to trigger by accident, so
+ * it asks for a deliberate second press.
+ */
+.fret-avatar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--body);
+  border: 1px solid var(--edge);
+  cursor: pointer;
+  padding: 0 0 0 0;
+  overflow: hidden;
+  transition: all 0.24s cubic-bezier(0.4, 1.2, 0.5, 1);
+}
+
+.fret-avatar:hover {
+  background: var(--sunk);
+  border-color: var(--edge2);
+}
+
+.fret-avatar__initials {
+  width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--fg2);
+  flex-shrink: 0;
+}
+
+.fret-avatar__signout {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--accent);
+  white-space: nowrap;
+  max-width: 0;
+  opacity: 0;
+  transition: max-width 0.24s cubic-bezier(0.4, 1.2, 0.5, 1), opacity 0.24s ease,
+    padding 0.24s ease;
+  overflow: hidden;
+}
+
+.fret-avatar--open .fret-avatar__signout {
+  max-width: 80px;
+  opacity: 1;
+  padding-right: 12px;
+}
+
+/* Theme glyph: a circle half-filled in light mode, solid in dark. */
+.fret-themeglyph {
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  border: 1.5px solid var(--fg2);
+  background: linear-gradient(90deg, var(--fg2) 0 50%, transparent 50% 100%);
+}
+
+.fret-themeglyph--dark {
+  background: var(--fg2);
+}
+
+/* Settings glyph: three bars with knobs at different positions. */
+.fret-settingsglyph {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 14px;
+}
+
+.fret-settingsglyph__bar {
+  display: flex;
+  align-items: center;
+  height: 3.5px;
+}
+
+.fret-settingsglyph__track {
+  height: 1px;
+  background: var(--fg3);
+}
+
+.fret-settingsglyph__knob {
+  width: 3.5px;
+  height: 3.5px;
+  background: var(--fg2);
+  flex-shrink: 0;
+}
+
+/* ---------- settings rows ---------- */
+
+.fret-settings {
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * The device grows into its settings while bytes are still moving. Animating
+ * grid-template-rows between 0fr and 1fr is what lets it size itself to its
+ * content without a hard-coded height.
+ */
+.fret-grow {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.46s cubic-bezier(0.32, 0.9, 0.28, 1), opacity 0.3s ease;
+}
+
+.fret-grow--open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.fret-grow__inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.fret-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+}
+
+/* No hairline above the first row: the vent already separates the halves. */
+.fret-row + .fret-row {
+  border-top: 1px solid var(--edge);
+}
+
+.fret-row__label {
+  width: 76px;
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fg3);
+}
+
+.fret-row__control {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- fields ---------- */
+
+.fret-field {
+  width: 100%;
+  background: var(--sunk);
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--fg);
+  transition: border-color 0.16s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.fret-field:focus {
+  outline: none;
+  border-color: var(--fg3);
+}
+
+.fret-field:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.fret-field--error {
+  border-color: var(--accent);
+}
+
+.fret-field__error {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-top: 6px;
+}
+
+/* ---------- segmented control ---------- */
+
+.fret-segmented {
+  display: flex;
+  gap: 3px;
+  background: var(--sunk);
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  padding: 3px;
+}
+
+/*
+ * Border width, style and colour are set separately rather than through the
+ * shorthand: the shorthand would reset the others each time the selection
+ * moves, which makes the transition jump.
+ */
+.fret-segmented__item {
+  flex: 1;
+  border-radius: 7px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: transparent;
+  background: transparent;
+  color: var(--fg3);
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 7px 4px;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+  min-width: 0;
+}
+
+.fret-segmented__item:hover {
+  color: var(--fg2);
+}
+
+.fret-segmented__item--on {
+  background: var(--body);
+  border-color: var(--edge);
+  color: var(--fg);
+}
+
+.fret-segmented__item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ---------- popover ---------- */
+
+.fret-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  width: 268px;
+  background: var(--body);
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  box-shadow: var(--lift);
+  padding: 14px;
+  animation: fretPop 0.2s cubic-bezier(0.32, 0.9, 0.28, 1) both;
+}
+
+.fret-popover__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+}
+
+.fret-popover__row + .fret-popover__row {
+  border-top: 1px solid var(--edge);
+}
+
+.fret-popover__label {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg3);
+  flex-shrink: 0;
+}
+
+.fret-popover__value {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--fg2);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fret-popover__stack {
+  padding: 9px 0;
+}
+
+.fret-popover__stack + .fret-popover__stack {
+  border-top: 1px solid var(--edge);
+}
+
+.fret-popover__stackLabel {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg3);
+  margin-bottom: 8px;
+}
+
+.fret-meter {
+  height: 3px;
+  background: var(--sunk);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 7px;
+}
+
+.fret-meter__fill {
+  height: 100%;
+  background: var(--fg2);
+  border-radius: 999px;
+  transition: width 0.4s cubic-bezier(0.32, 0.9, 0.28, 1);
+}
+
+/* The superadmin block is bordered off: it reports on the whole instance, not
+   this account, and should not read as another personal setting. */
+.fret-admin {
+  margin-top: 10px;
+  border: 1px solid var(--edge);
+  border-radius: 11px;
+  padding: 11px;
+  background: var(--sunk);
+}
+
+.fret-admin__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.fret-admin__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.fret-admin__label {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg3);
+}
+
+.fret-admin__value {
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+}
+
+.fret-admin__sub {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg3);
+  margin-top: 4px;
+}

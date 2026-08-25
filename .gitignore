@@ -26,3 +26,6 @@
 # Built frontend, embedded at compile time
 /internal/api/dist/*
 !/internal/api/dist/.gitkeep
+
+# TypeScript incremental build state
+*.tsbuildinfo

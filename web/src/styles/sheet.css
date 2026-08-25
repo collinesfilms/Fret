@@ -1,0 +1,608 @@
+/*
+ * The transfers sheet and the edit modal.
+ *
+ * The sheet opens from the left on desktop and from the bottom on mobile. The
+ * mobile sheet has no close button — a grab handle stands in, which is what a
+ * thumb reaches for anyway.
+ */
+
+.fret-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--scrim);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease;
+}
+
+.fret-scrim--on {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.fret-scrim--strong {
+  background: var(--scrimStrong);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.fret-sheet {
+  position: fixed;
+  z-index: 60;
+  background: var(--body);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.34s cubic-bezier(0.32, 0.9, 0.28, 1);
+}
+
+/* Desktop: in from the left. */
+.fret-sheet {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(400px, 86%);
+  border-right: 1px solid var(--edge);
+  box-shadow: var(--shLeft);
+  transform: translateX(-102%);
+}
+
+.fret-sheet--open {
+  transform: none;
+}
+
+/* Mobile: up from the bottom. */
+@media (max-width: 640px) {
+  .fret-sheet {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: 78%;
+    border-right: none;
+    border-top: 1px solid var(--edge);
+    border-radius: 20px 20px 0 0;
+    box-shadow: var(--shUp);
+    transform: translateY(102%);
+  }
+  .fret-sheet--open {
+    transform: none;
+  }
+}
+
+.fret-sheet__grab {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .fret-sheet__grab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0 6px;
+    cursor: grab;
+    touch-action: none;
+    flex-shrink: 0;
+  }
+  .fret-sheet__grab::before {
+    content: '';
+    width: 38px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--edge2);
+  }
+}
+
+.fret-sheet__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .fret-sheet__body {
+    padding-top: 6px;
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+}
+
+.fret-sheet__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.fret-sheet__title {
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+
+.fret-sheet__subtitle {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg3);
+  margin-top: 5px;
+}
+
+.fret-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid var(--edge);
+  background: var(--body);
+  color: var(--fg2);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  margin-left: auto;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.16s ease;
+}
+
+.fret-close:hover {
+  background: var(--sunk);
+}
+
+@media (max-width: 640px) {
+  .fret-sheet__head .fret-close {
+    display: none;
+  }
+}
+
+/* ---------- stats ---------- */
+
+.fret-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+
+.fret-stat {
+  background: var(--sunk);
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  padding: 11px;
+  min-width: 0;
+}
+
+.fret-stat__value {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: -0.045em;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fret-stat__label {
+  font-family: var(--mono);
+  font-size: 7px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg3);
+  margin-top: 5px;
+}
+
+/* ---------- the list ---------- */
+
+.fret-listhead {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg3);
+  margin-top: 2px;
+}
+
+/*
+ * One flat chronological list, deliberately ungrouped. The red countdown
+ * already carries urgency, and an "expiring soon" section would break the
+ * history reading that makes the list scannable.
+ */
+.fret-list {
+  background: var(--sunk);
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.fret-list__row + .fret-list__row {
+  border-top: 1px solid var(--edge);
+}
+
+.fret-row__main {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 12px;
+  cursor: pointer;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  color: inherit;
+}
+
+.fret-tile {
+  position: relative;
+  width: 41px;
+  height: 41px;
+  border-radius: 11px;
+  background: var(--body);
+  border: 1px solid var(--edge);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.fret-tile__count {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: -0.04em;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.fret-tile__unit {
+  font-family: var(--mono);
+  font-size: 5.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg3);
+  margin-top: 1px;
+}
+
+/* A padlock badge, in neutral grey: a password is a feature, not a problem. */
+.fret-tile__lock {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--body);
+  border: 1px solid var(--edge);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 3px;
+}
+
+.fret-lock {
+  position: relative;
+  width: 7px;
+  height: 5.5px;
+  border-radius: 1.4px;
+  background: var(--fg2);
+}
+
+.fret-lock::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 100%;
+  width: 4.2px;
+  height: 4px;
+  border: 1px solid var(--fg2);
+  border-bottom: none;
+  border-radius: 2.2px 2.2px 0 0;
+}
+
+.fret-row__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.fret-row__slug {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.018em;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fret-row__meta {
+  font-family: var(--mono);
+  font-size: 7.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--fg3);
+  margin-top: 4px;
+}
+
+.fret-row__right {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-shrink: 0;
+}
+
+.fret-row__countdown {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg3);
+}
+
+/* Expiring within a day turns red; nothing else in the row does. */
+.fret-row__countdown--soon {
+  color: var(--accent);
+}
+
+.fret-chevron {
+  color: var(--fg3);
+  font-size: 13px;
+  line-height: 1;
+  transition: transform 0.24s cubic-bezier(0.4, 1.2, 0.5, 1);
+}
+
+.fret-chevron--open {
+  transform: rotate(90deg);
+}
+
+.fret-rowactions {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.32, 0.9, 0.28, 1), opacity 0.22s ease;
+}
+
+.fret-rowactions--open {
+  max-height: 78px;
+  opacity: 1;
+}
+
+.fret-rowactions__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 0 12px 11px;
+}
+
+.fret-action {
+  background: var(--body);
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  padding: 9px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--fg2);
+  transition: background 0.16s ease;
+}
+
+.fret-action:hover {
+  background: var(--sunk);
+}
+
+.fret-action__label {
+  font-family: var(--mono);
+  font-size: 7px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg3);
+}
+
+.fret-action--danger,
+.fret-action--danger .fret-action__label {
+  color: var(--accent);
+}
+
+.fret-glyph {
+  width: 13px;
+  height: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* Copy: two offset rounded squares. */
+.fret-glyph--copy::before,
+.fret-glyph--copy::after {
+  content: '';
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border: 1px solid currentColor;
+  border-radius: 2.4px;
+}
+.fret-glyph--copy::before {
+  top: 0;
+  left: 0;
+}
+.fret-glyph--copy::after {
+  bottom: 0;
+  right: 0;
+  background: var(--body);
+}
+
+/* Edit: a rotated bar with a square tip. */
+.fret-glyph--edit::before {
+  content: '';
+  position: absolute;
+  width: 11px;
+  height: 2.2px;
+  background: currentColor;
+  transform: rotate(-45deg);
+  border-radius: 1px;
+}
+.fret-glyph--edit::after {
+  content: '';
+  position: absolute;
+  width: 3.2px;
+  height: 3.2px;
+  background: currentColor;
+  transform: rotate(-45deg);
+  right: 0;
+  top: 1px;
+}
+
+/* Delete: a lid bar over a box. */
+.fret-glyph--delete::before {
+  content: '';
+  position: absolute;
+  top: 1px;
+  width: 13px;
+  height: 1.6px;
+  background: currentColor;
+  border-radius: 1px;
+}
+.fret-glyph--delete::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 9px;
+  height: 9.5px;
+  border: 1px solid currentColor;
+  border-top: none;
+  border-radius: 0 0 2px 2px;
+}
+
+.fret-empty {
+  text-align: center;
+  padding: 34px 12px;
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg3);
+}
+
+/* ---------- modal ---------- */
+
+/*
+ * Editing opens its own modal rather than loading the transfer back into the
+ * upload device. The upload UI is about something arriving; an edit is not.
+ */
+.fret-modal {
+  position: fixed;
+  z-index: 70;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(376px, calc(100% - 40px));
+  background: var(--body);
+  border: 1px solid var(--edge);
+  border-radius: 18px;
+  box-shadow: var(--modalShadow);
+  animation: fretModalIn 0.28s cubic-bezier(0.32, 1.2, 0.4, 1) both;
+  max-height: calc(100dvh - 48px);
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 640px) {
+  .fret-modal {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    transform: none;
+    width: 100%;
+    max-width: none;
+    border-radius: 20px 20px 0 0;
+    animation: fretSheetUp 0.3s cubic-bezier(0.32, 0.9, 0.28, 1) both;
+    max-height: 88dvh;
+  }
+}
+
+.fret-modal__head {
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--edge);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.fret-modal__title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.fret-modal__meta {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg3);
+  margin-top: 5px;
+}
+
+.fret-modal__body {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.fret-modal__field label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fg3);
+  margin-bottom: 7px;
+}
+
+.fret-modal__foot {
+  padding: 14px 18px 18px;
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  border-top: 1px solid var(--edge);
+}
+
+@media (max-width: 640px) {
+  .fret-modal__foot {
+    padding-bottom: max(18px, env(safe-area-inset-bottom));
+  }
+}
+
+.fret-modal__foot .fret-key {
+  flex: 1;
+  font-size: 13.5px;
+  padding: 13px 16px;
+}
+
+.fret-delete {
+  background: var(--body);
+  border: 1px solid var(--edge);
+  border-radius: 11px;
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 13px 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.16s ease;
+}
+
+.fret-delete:hover {
+  background: var(--sunk);
+}
