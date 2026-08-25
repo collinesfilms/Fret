@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Grow, LiveField, Segmented, SettingsRow, Tray } from '../components/Controls'
-import { Key, LinkReadout, Panel, Screen, Strip, Vent } from '../components/Device'
+import { Key, LinkReadout, Morph, Panel, Screen, Strip, Vent } from '../components/Device'
 import { api, ApiError, type Expiry, type Me, type Resumable, type Transfer } from '../lib/api'
 import { filterSlug, formatBytes, rate, remaining, splitBytes } from '../lib/format'
 import { fileCount, translate, type Locale, type StringKey } from '../lib/i18n'
@@ -526,7 +526,9 @@ export function TransferScreen({
               lamp={keyState.lamp}
               onClick={keyState.action}
             >
-              {keyState.label}
+              {/* The label is the status readout for this key, so it changes
+                  by being replaced rather than rewritten in place. */}
+              <Morph>{keyState.label}</Morph>
             </Key>
             <Key
               variant="alt"
@@ -538,7 +540,7 @@ export function TransferScreen({
               {t('key.options')}
             </Key>
             <Key variant="alt" className="fret-actions__secondary" onClick={reset}>
-              {uploading ? t('key.cancel') : t('key.new')}
+              <Morph>{uploading ? t('key.cancel') : t('key.new')}</Morph>
             </Key>
           </div>
         </Grow>

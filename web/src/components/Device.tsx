@@ -88,8 +88,66 @@ export function Lamp({
  * inline-block aligns its bottom edge to the baseline, which is exactly where
  * a block cursor belongs.
  */
-export function Caret() {
-  return <span className="fret-caret" aria-hidden="true" />
+export function Caret({ solid }: { solid?: boolean } = {}) {
+  return <span className={`fret-caret${solid ? ' fret-caret--solid' : ''}`} aria-hidden="true" />
+}
+
+/**
+ * Whether this reader has asked for a still interface.
+ *
+ * The stylesheet answers that on its own for animations, but typing is a
+ * timer rather than a keyframe, so it has to ask. Read at the moment it is
+ * needed rather than cached: the setting can change under a running tab.
+ */
+function prefersStillness() {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+}
+
+/**
+ * A line the device types out, with the caret advancing ahead of it.
+ *
+ * The caret is already on the screen doing nothing; letting it write the line
+ * is what makes it a readout rather than a decoration. It holds solid while
+ * the characters arrive and only starts blinking once the line is finished,
+ * which is what a terminal does — a caret that blinks mid-output reads as a
+ * stall.
+ *
+ * The typed copy is hidden from assistive technology and the whole line is
+ * exposed beside it, so a screen reader is given a sentence rather than a
+ * sentence being spelled at it one character per re-render.
+ */
+export function Typed({ children, speed = 24 }: { children: string; speed?: number }) {
+  // Starts empty rather than full: initialising to the whole line would paint
+  // it once before the effect could clear it, and the line would flash into
+  // existence a frame before it started being written.
+  const [count, setCount] = useState(() => (prefersStillness() ? children.length : 0))
+
+  useEffect(() => {
+    if (prefersStillness()) {
+      setCount(children.length)
+      return
+    }
+    setCount(0)
+    let shown = 0
+    const timer = window.setInterval(() => {
+      shown += 1
+      setCount(shown)
+      if (shown >= children.length) window.clearInterval(timer)
+    }, speed)
+    return () => window.clearInterval(timer)
+  }, [children, speed])
+
+  return (
+    <span className="fret-typed">
+      <span aria-hidden="true">{children.slice(0, count)}</span>
+      <span className="fret-sr">{children}</span>
+      <Caret solid={count < children.length} />
+    </span>
+  )
 }
 
 export function Screen({
@@ -179,6 +237,76 @@ export function Strip({
       <span className="fret-screen__stripLabel">{label}</span>
       {right && <span className="fret-screen__stripRight">{right}</span>}
     </div>
+  )
+}
+
+/**
+ * How long an outgoing line stays in the DOM. Must outlast --durBase, which
+ * is what the stylesheet gives it to leave in.
+ */
+const MORPH_MS = 320
+
+/**
+ * A line of text that changes by being replaced rather than rewritten.
+ *
+ * "Copy link" becoming "Copied to clipboard" is a different sentence, not the
+ * same sentence edited, and swapping the characters in place says the wrong
+ * thing about it: for one frame the key reads as neither. The outgoing line
+ * leaves upward and the incoming one arrives from below, the way a split-flap
+ * changes — which is also the only kind of text animation this device has any
+ * business doing.
+ *
+ * Both lines are laid out in the same cell, so nothing around it moves while
+ * they trade places. The box measures itself against whichever is present, so
+ * a key that sizes to its label still sizes to it.
+ */
+export function Morph({ children }: { children: string }) {
+  const [pair, setPair] = useState<{ current: string; leaving: string | null }>({
+    current: children,
+    leaving: null,
+  })
+  const timer = useRef<number | undefined>(undefined)
+
+  useEffect(() => () => window.clearTimeout(timer.current), [])
+
+  useEffect(() => {
+    setPair((previous) =>
+      previous.current === children ? previous : { current: children, leaving: previous.current },
+    )
+  }, [children])
+
+  /*
+   * Retiring the outgoing line is its own effect, keyed on the line itself.
+   *
+   * Scheduling it beside the swap above does not work, and fails quietly: the
+   * swap changes state, the re-render it causes re-runs the effect, the
+   * effect's cleanup cancels the timeout it just set, and the outgoing line
+   * stays in the DOM for the life of the page. It is invisible — the
+   * animation ends at zero opacity — so the only symptom is one more hidden
+   * copy of every label the key has ever shown.
+   */
+  useEffect(() => {
+    if (pair.leaving === null) return
+    window.clearTimeout(timer.current)
+    timer.current = window.setTimeout(
+      () => setPair((previous) => ({ ...previous, leaving: null })),
+      MORPH_MS,
+    )
+  }, [pair.leaving])
+
+  return (
+    <span className="fret-morph">
+      {pair.leaving !== null && (
+        <span className="fret-morph__out" aria-hidden="true" key={pair.leaving}>
+          {pair.leaving}
+        </span>
+      )}
+      <span
+        className={`fret-morph__in${pair.leaving !== null ? ' fret-morph__in--arriving' : ''}`}
+      >
+        {pair.current}
+      </span>
+    </span>
   )
 }
 

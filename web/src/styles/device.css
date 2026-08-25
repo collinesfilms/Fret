@@ -16,7 +16,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  animation: fretIn 0.4s cubic-bezier(0.32, 0.9, 0.28, 1) both;
+  animation: fretIn var(--durPanel) var(--easeOut) both;
 }
 
 .fret-panel--recipient {
@@ -25,11 +25,11 @@
 
 /* Played once, when an upload lands. */
 .fret-panel--settled {
-  animation: fretSettle 0.62s var(--easeOut) both;
+  animation: fretSettle var(--durBeat) var(--easeOut) both;
 }
 
 .fret-lamp--bloom {
-  animation: fretBloom 0.7s var(--easeOut) both;
+  animation: fretBloom var(--durBeat) var(--easeOut) both;
 }
 
 /* ---------- the screen ---------- */
@@ -49,7 +49,7 @@
     transparent 1px 3px
   );
   overflow: hidden;
-  transition: box-shadow 0.2s ease;
+  transition: box-shadow var(--durFast) ease;
   color: var(--screenFg);
 }
 
@@ -127,6 +127,12 @@
   bottom: 0;
   z-index: 1;
   background: linear-gradient(180deg, rgba(207, 63, 40, 0.15), rgba(207, 63, 40, 0.05));
+  /*
+   * Linear, and deliberately outside the motion vocabulary. The height is a
+   * real byte count; easing it would draw an acceleration that is not
+   * happening, and on a stalling upload the level would keep gliding after
+   * the transfer had stopped.
+   */
   transition: height 0.35s linear;
   pointer-events: none;
 }
@@ -142,7 +148,7 @@
 
 /* On completion the material drains rather than snapping to empty. */
 .fret-fill--draining {
-  transition: height 0.7s cubic-bezier(0.3, 0.8, 0.3, 1), opacity 0.7s ease;
+  transition: height var(--durDrain) var(--easeDrain), opacity var(--durDrain) ease;
 }
 
 /* The sheen crosses the whole screen, not only the filled part. */
@@ -276,6 +282,19 @@
   margin-left: 0.18em;
 }
 
+/* Held solid while a line is still arriving: a caret that blinks mid-output
+   reads as a stall rather than as writing. */
+.fret-caret--solid {
+  animation: none;
+  opacity: 1;
+}
+
+/* The typed line and its caret stay on one baseline, and the line never
+   rewraps mid-sentence as it grows. */
+.fret-typed {
+  display: inline;
+}
+
 /* ---------- vent ---------- */
 
 /*
@@ -309,7 +328,7 @@
   letter-spacing: -0.01em;
   padding: 14px 18px;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: transform var(--durPress) var(--easeOut), box-shadow var(--durPress) var(--easeOut);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -397,6 +416,34 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/*
+ * A line of text trading places with another.
+ *
+ * The incoming line is in flow, so the cell is the width of whatever the
+ * label now says; the outgoing one is taken out of flow over the top of it,
+ * centred on the same point, so it can leave without dragging the width with
+ * it. Clipping is on the parent rather than here — a key already clips its
+ * label, and clipping twice would cut the travel short.
+ */
+.fret-morph {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.fret-morph__out {
+  position: absolute;
+  inset: 0;
+  display: block;
+  text-align: center;
+  animation: fretMorphOut var(--durBase) var(--easeExit) both;
+}
+
+.fret-morph__in--arriving {
+  display: inline-block;
+  animation: fretMorphIn var(--durBase) var(--easeOut) both;
 }
 
 /*
@@ -503,5 +550,5 @@
 }
 
 .fret-link__slug--flash {
-  animation: fretLinkFlash 0.62s ease-out both;
+  animation: fretLinkFlash var(--durBeat) var(--easeOut) both;
 }

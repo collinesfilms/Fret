@@ -61,20 +61,42 @@
    *                pulled rather than faded.
    *   --easeExit   anything leaving. Faster than it arrived, and never
    *                overshooting — a thing on its way out should not bounce.
+   *   --easeDrain  the screen's fill emptying. A long tail, because a level
+   *                falling is not a control answering.
    *
    * Durations are named for what they are, not how long: a press is not
    * allowed to take as long as a drawer.
+   *
+   *   --durPress   a control acknowledging a finger.
+   *   --durFast    a colour, a border, a tick.
+   *   --durBase    a control changing state.
+   *   --durSheet   a whole surface arriving from an edge.
+   *   --durPanel   the device growing into its settings.
+   *   --durTray    the drawer travelling.
+   *   --durBeat    a one-shot acknowledgement — a flash, a settle, a bloom.
+   *   --durDrain   the fill emptying after an upload lands.
+   *
+   * Nothing outside this block states a curve or a duration, with two
+   * deliberate exceptions. The breathing rates of the lamps and the scanline
+   * are not motion in this sense: they are not answering anything, they never
+   * end, and a shared token would only invite someone to change all of them
+   * at once. And the fill's catch-up is linear on purpose — it tracks real
+   * bytes, and easing it would draw a rate that is not the one happening.
    */
   --easeOut: cubic-bezier(0.32, 0.9, 0.28, 1);
   --easeSnap: cubic-bezier(0.4, 1.2, 0.5, 1);
   --easeTray: cubic-bezier(0.26, 1.32, 0.36, 1);
   --easeExit: cubic-bezier(0.4, 0, 0.7, 0.4);
+  --easeDrain: cubic-bezier(0.3, 0.8, 0.3, 1);
 
   --durPress: 0.12s;
   --durFast: 0.18s;
   --durBase: 0.28s;
+  --durSheet: 0.36s;
   --durPanel: 0.44s;
   --durTray: 0.52s;
+  --durBeat: 0.66s;
+  --durDrain: 0.7s;
 }
 
 :root[data-theme='dark'] {
@@ -174,6 +196,31 @@
   0% { transform: scale(1); }
   38% { transform: scale(1.007); }
   100% { transform: scale(1); }
+}
+
+/*
+ * One line of text replacing another. The distance is expressed in em so it
+ * scales with whatever type it is set in, and it is deliberately short of a
+ * full line height: this is a label changing its mind, not a departures board.
+ */
+@keyframes fretMorphOut {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-0.62em); }
+}
+@keyframes fretMorphIn {
+  0% { opacity: 0; transform: translateY(0.62em); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/*
+ * A row leaving the transfers list. The border collapses with it — a hairline
+ * left behind by a row that has gone is the sort of thing you only notice
+ * once, and then cannot stop noticing.
+ */
+@keyframes fretRowOut {
+  0% { grid-template-rows: 1fr; opacity: 1; transform: none; }
+  60% { opacity: 0; }
+  100% { grid-template-rows: 0fr; opacity: 0; transform: translateX(-14px); border-top-color: transparent; }
 }
 
 /* The ready lamp arrives rather than switching on. */

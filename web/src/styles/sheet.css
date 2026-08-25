@@ -15,7 +15,7 @@
   -webkit-backdrop-filter: blur(2px);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.28s ease;
+  transition: opacity var(--durBase) ease;
 }
 
 .fret-scrim--on {
@@ -35,7 +35,7 @@
   background: var(--body);
   display: flex;
   flex-direction: column;
-  transition: transform 0.34s cubic-bezier(0.32, 0.9, 0.28, 1);
+  transition: transform var(--durSheet) var(--easeOut);
 }
 
 /* Desktop: in from the left. */
@@ -148,7 +148,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.16s ease;
+  transition: background var(--durFast) ease;
 }
 
 .fret-close:hover {
@@ -221,6 +221,31 @@
 
 .fret-list__row + .fret-list__row {
   border-top: 1px solid var(--edge);
+}
+
+/*
+ * A deleted row falls out of the list rather than being subtracted from it.
+ *
+ * The collapse interpolates grid-template-rows, the one property the device's
+ * own growth deliberately avoids because an engine too old to animate it
+ * would snap the whole panel open. Here the fallback is the behaviour we
+ * already had — the row vanishes and the list closes up — so the trade runs
+ * the other way: everything modern gets the fall, everything else is no worse
+ * off than before.
+ *
+ * It leaves sideways as well as downwards. Straight down reads as the list
+ * settling; a small slip to the left reads as the row being taken out of it.
+ */
+.fret-list__row--leaving {
+  display: grid;
+  grid-template-rows: 1fr;
+  animation: fretRowOut var(--durBase) var(--easeExit) both;
+  pointer-events: none;
+}
+
+.fret-list__row--leaving .fret-list__rowInner {
+  overflow: hidden;
+  min-height: 0;
 }
 
 .fret-row__main {
@@ -362,7 +387,7 @@
   color: var(--fg3);
   font-size: 13px;
   line-height: 1;
-  transition: transform 0.24s cubic-bezier(0.4, 1.2, 0.5, 1);
+  transition: transform var(--durBase) var(--easeSnap);
 }
 
 .fret-chevron--open {
@@ -373,7 +398,7 @@
   max-height: 0;
   opacity: 0;
   overflow: hidden;
-  transition: max-height 0.3s cubic-bezier(0.32, 0.9, 0.28, 1), opacity 0.22s ease;
+  transition: max-height var(--durBase) var(--easeOut), opacity var(--durFast) ease;
 }
 
 .fret-rowactions--open {
@@ -406,7 +431,7 @@
   text-transform: uppercase;
   color: var(--fg2);
   cursor: pointer;
-  transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+  transition: background var(--durFast) ease, color var(--durFast) ease, box-shadow var(--durFast) ease;
 }
 
 .fret-rowaction:first-child {
@@ -479,7 +504,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  transition: left 0.34s cubic-bezier(0.32, 0.9, 0.28, 1);
+  transition: left var(--durSheet) var(--easeOut);
 }
 
 /*
@@ -497,7 +522,7 @@
   border: 1px solid var(--edge);
   border-radius: 18px;
   box-shadow: var(--modalShadow);
-  animation: fretModalIn 0.28s cubic-bezier(0.32, 1.2, 0.4, 1) both;
+  animation: fretModalIn var(--durBase) var(--easeSnap) both;
   max-height: calc(100dvh - 48px);
   display: flex;
   flex-direction: column;
@@ -513,7 +538,7 @@
     width: 100%;
     max-width: none;
     border-radius: 20px 20px 0 0;
-    animation: fretSheetUp 0.3s cubic-bezier(0.32, 0.9, 0.28, 1) both;
+    animation: fretSheetUp var(--durBase) var(--easeOut) both;
     max-height: 88dvh;
   }
 }
@@ -589,11 +614,28 @@
   padding: 13px 16px;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.16s ease;
+  transition: background var(--durFast) ease;
 }
 
 .fret-delete:hover {
   background: var(--sunk);
+}
+
+/*
+ * Armed. The button has been red text on the body all along; now it is the
+ * red itself, which is the only moment in Fret where accent becomes a ground
+ * rather than a mark. A control that is one press from something irreversible
+ * should not look like the one that was merely offering.
+ */
+.fret-delete--armed {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bodyHi);
+}
+
+.fret-delete--armed:hover {
+  background: var(--accent);
+  filter: brightness(1.06);
 }
 
 /*
@@ -661,7 +703,7 @@
   text-transform: uppercase;
   color: var(--fg2);
   cursor: pointer;
-  transition: background 0.16s ease, color 0.16s ease;
+  transition: background var(--durFast) ease, color var(--durFast) ease;
 }
 
 .fret-modal__restoreButton:hover {

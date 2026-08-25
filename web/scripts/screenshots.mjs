@@ -44,6 +44,16 @@ async function settle(page, ms = 400) {
     content: '.fret-caret { animation: none !important; opacity: 1 !important; }',
   })
   await page.evaluate(() => document.fonts.ready)
+
+  // Lines the device types out are a timer, not a keyframe, so finishing the
+  // animations below does not finish them. The caret is held solid while a
+  // line is still arriving, which makes it the signal to wait on.
+  await page
+    .waitForFunction(() => !document.querySelector('.fret-caret--solid'), undefined, {
+      timeout: 5_000,
+    })
+    .catch(() => {})
+
   await page.waitForTimeout(ms)
 
   // Jump every finite animation to its end.

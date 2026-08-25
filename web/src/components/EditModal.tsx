@@ -11,7 +11,7 @@ import { api, ApiError, type Expiry, type TransferSummary } from '../lib/api'
 import { filterSlug, formatBytes, plural } from '../lib/format'
 import { translate, type Locale, type StringKey } from '../lib/i18n'
 import { Consequence, Field, Segmented } from './Controls'
-import { Key } from './Device'
+import { Key, Morph } from './Device'
 
 interface EditModalProps {
   transfer: TransferSummary
@@ -219,10 +219,21 @@ export function EditModal({
 
         <div className="fret-modal__foot">
           <Key inert={!dirty || saving} onClick={save}>
-            {dirty ? t('edit.save') : t('edit.noChanges')}
+            <Morph>{dirty ? t('edit.save') : t('edit.noChanges')}</Morph>
           </Key>
-          <button type="button" className="fret-delete" onClick={remove} disabled={saving}>
-            {confirmDelete ? t('edit.confirmDelete') : t('edit.delete')}
+          {/*
+            Delete arming itself is the one place in the modal where a control
+            changes what it will do, so it says so twice: the label is
+            replaced rather than rewritten, and the button takes the accent
+            ground it has been threatening all along.
+          */}
+          <button
+            type="button"
+            className={`fret-delete${confirmDelete ? ' fret-delete--armed' : ''}`}
+            onClick={remove}
+            disabled={saving}
+          >
+            <Morph>{confirmDelete ? t('edit.confirmDelete') : t('edit.delete')}</Morph>
           </button>
         </div>
       </div>

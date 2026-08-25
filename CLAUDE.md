@@ -131,6 +131,31 @@ still arriving, so its name has never been anywhere and a rename there costs
 nothing — that asymmetry is the reason the warning lives in one place and not
 the other.
 
+## An effect that cancels its own timer
+
+This one has now cost three separate bugs, in the transfers list, the morphing
+key label and the drawer. It looks like ordinary React:
+
+```tsx
+useEffect(() => {
+  if (children === current) return
+  setLeaving(current)
+  setCurrent(children)                                  // ← re-render, deps change
+  const timer = setTimeout(() => setLeaving(null), 320)
+  return () => clearTimeout(timer)                      // ← cancels the timer above
+}, [children, current])
+```
+
+The state change the effect makes puts it back in its own dependency list, so
+the cleanup runs and kills the timeout before it can fire. Nothing throws and
+nothing looks wrong on screen: the leaving element is at zero opacity by then.
+It simply never leaves the DOM.
+
+Anything that schedules a **removal** belongs in its own effect keyed on the
+thing being removed, or on a ref cleared only on unmount. The rule of thumb:
+if an effect both changes state and sets a timer, the timer is probably about
+to be cancelled by the change.
+
 ## Deployment gotchas
 
 All three of these cost real time on the first deploy. None are Fret bugs;

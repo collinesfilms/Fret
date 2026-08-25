@@ -14,6 +14,14 @@ type Filter = 'all' | 'expiring' | 'locked'
 /** Past this many pixels of downward drag, the mobile sheet dismisses. */
 const DISMISS_AFTER = 70
 
+/**
+ * How long a deleted row stays on screen after it has left the list.
+ *
+ * Must outlast the collapse in the stylesheet; a little over is harmless,
+ * under would cut the row off mid-fall.
+ */
+const DEPART_MS = 340
+
 /** Which row action is currently held open, so its cell can read as pressed. */
 export interface EngagedAction {
   id: string
@@ -82,6 +90,69 @@ export function TransfersSheet({
       return true
     })
   }, [transfers, query, filter, now])
+
+  /*
+   * Rows that have left the list but not yet the screen.
+   *
+   * A deleted transfer is gone from the server before the list reloads, so by
+   * the time this renders again there is nothing left to animate: the row
+   * simply ceases to exist and everything below it jumps up. Holding on to it
+   * for the length of its collapse is the only way to show it going, and the
+   * position is held with it — a row that fell out of the middle of the list
+   * must fall from the middle, not from the end.
+   *
+   * Only a row that left the *data* falls. Searching and filtering remove
+   * rows too, and those are the list answering a question rather than losing
+   * anything; making them collapse one by one would be a lie about what
+   * happened, and a slow one.
+   */
+  const [departing, setDeparting] = useState<{ transfer: TransferSummary; index: number }[]>([])
+  const lastVisible = useRef(visible)
+  const lastIds = useRef(new Set(transfers.map((transfer) => transfer.id)))
+  const departTimers = useRef<number[]>([])
+
+  useEffect(() => () => departTimers.current.forEach(window.clearTimeout), [])
+
+  /*
+   * Deliberately not keyed on `visible`: the countdown is recomputed against
+   * the clock on every render, so that array is a new object every time and
+   * an effect watching it would run on every render — cancelling its own
+   * removal timer before it ever fired, and leaving the collapsed row on
+   * screen for good. These three are what actually change who is in the list.
+   */
+  useEffect(() => {
+    const present = new Set(transfers.map((transfer) => transfer.id))
+    const deleted = new Set([...lastIds.current].filter((id) => !present.has(id)))
+    const before = lastVisible.current
+    lastVisible.current = visible
+    lastIds.current = present
+    if (deleted.size === 0) return
+
+    const gone = before
+      .map((transfer, index) => ({ transfer, index }))
+      .filter((row) => deleted.has(row.transfer.id))
+    if (gone.length === 0) return
+
+    setDeparting((current) => [...current, ...gone])
+    const goneIds = new Set(gone.map((row) => row.transfer.id))
+    departTimers.current.push(
+      window.setTimeout(
+        () => setDeparting((current) => current.filter((row) => !goneIds.has(row.transfer.id))),
+        DEPART_MS,
+      ),
+    )
+    // No cleanup: this timer belongs to the rows it was scheduled for, not to
+    // the render that happened to schedule it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transfers, query, filter])
+
+  const rows = useMemo(() => {
+    const out = visible.map((transfer) => ({ transfer, leaving: false }))
+    for (const row of departing) {
+      out.splice(Math.min(row.index, out.length), 0, { transfer: row.transfer, leaving: true })
+    }
+    return out
+  }, [visible, departing])
 
   const expiringCount = useMemo(
     () => transfers.filter((transfer) => countdown(transfer.expiresAt, now).soon).length,
@@ -205,11 +276,12 @@ export function TransfersSheet({
              * history reading that makes the list scannable.
              */
             <div className="fret-list">
-              {visible.map((transfer) => (
+              {rows.map(({ transfer, leaving }) => (
                 <Row
                   key={transfer.id}
                   transfer={transfer}
                   locale={locale}
+                  leaving={leaving}
                   engaged={engaged?.id === transfer.id ? engaged.action : null}
                   open={openRow === transfer.id}
                   interactive={open}
@@ -248,12 +320,15 @@ function Row({
   onEdit,
   onOpen,
   onDelete,
+  leaving,
 }: {
   transfer: TransferSummary
   locale: Locale
   engaged: 'edit' | 'delete' | null
   open: boolean
   interactive: boolean
+  /** Already gone from the list, still on screen long enough to leave it. */
+  leaving?: boolean
   onToggle: () => void
   onCopy: () => void
   onEdit: () => void
@@ -263,10 +338,16 @@ function Row({
   const t = (key: StringKey, vars?: Record<string, string | number>) =>
     translate(locale, key, vars)
   const expiry = countdown(transfer.expiresAt)
-  const tab = interactive ? 0 : -1
+  const tab = leaving ? -1 : interactive ? 0 : -1
 
   return (
-    <div className="fret-list__row">
+    <div
+      className={`fret-list__row${leaving ? ' fret-list__row--leaving' : ''}`}
+      inert={leaving || undefined}
+    >
+      {/* The shell collapses; everything the row actually is lives in here,
+          so the two jobs do not fight over the same box. */}
+      <div className="fret-list__rowInner">
       <button type="button" className="fret-row__main" onClick={onToggle} tabIndex={tab}>
         <span className="fret-tile">
           <span className="fret-tile__count">{transfer.fileCount}</span>
@@ -324,6 +405,7 @@ function Row({
             tabIndex={open ? tab : -1}
           />
         </div>
+      </div>
       </div>
     </div>
   )

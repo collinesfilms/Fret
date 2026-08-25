@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from 'react'
 import { Field } from '../components/Controls'
-import { Caret, Key, Panel, Screen, Strip, Vent } from '../components/Device'
+import { Key, Panel, Screen, Strip, Typed, Vent } from '../components/Device'
 import { api, ApiError, archiveUrl, fileUrl, type PublicTransfer } from '../lib/api'
 import { countdown, formatBytes } from '../lib/format'
 import { fileCount, translate, type Locale, type StringKey } from '../lib/i18n'
@@ -127,8 +127,7 @@ export function Recipient({
             <Screen>
               <Strip color="var(--accent)" label={t('recipient.lockedStrip')} />
               <div className="fret-screen__title">
-                {t('recipient.locked')}
-                <Caret />
+                <Typed>{t('recipient.locked')}</Typed>
               </div>
               <form onSubmit={unlock} style={{ marginTop: 16, display: 'flex', gap: 8 }}>
                 <Field
@@ -180,11 +179,17 @@ function ReadyView({ transfer, locale }: { transfer: PublicTransfer; locale: Loc
           label={t('recipient.ready')}
           right={transfer.expiresAt ? expiry.label : undefined}
         />
+        {/*
+          The line the recipient came here to read, written rather than
+          printed. It is the first thing on the screen and the only sentence
+          on it, which is exactly what the caret is for.
+        */}
         <div className="fret-screen__title">
-          {transfer.senderName
-            ? t('recipient.sent', { name: transfer.senderName, count })
-            : t('recipient.sentAnon', { count })}
-          <Caret />
+          <Typed>
+            {transfer.senderName
+              ? t('recipient.sent', { name: transfer.senderName, count })
+              : t('recipient.sentAnon', { count })}
+          </Typed>
         </div>
 
         <div className="fret-filelist" style={{ marginTop: 8, maxHeight: 260 }}>
