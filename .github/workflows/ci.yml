@@ -9,6 +9,13 @@ on:
 permissions:
   contents: read
 
+# One run per ref. A pull request supersedes its own earlier run, but a push to
+# main or a tag never cancels one already in flight — that build may be the one
+# publishing an image someone is waiting on.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     runs-on: ubuntu-latest

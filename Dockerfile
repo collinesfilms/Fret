@@ -3,7 +3,10 @@
 # with — just the binary, CA certificates and a data volume.
 
 # ---- frontend ----
-FROM node:22-alpine AS web
+# Pinned to the build platform: the bundle is just files, identical whatever
+# the target architecture, so building it once natively beats building it again
+# under emulation for every platform in the matrix.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS web
 WORKDIR /build
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
@@ -12,16 +15,21 @@ COPY web/ ./
 RUN npm run build
 
 # ---- binary ----
-FROM golang:1.25-alpine AS build
+# Also pinned to the build platform, cross-compiling to the target. Go does
+# this natively and quickly; emulating the compiler instead would be minutes of
+# QEMU for no gain.
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 COPY --from=web /internal/api/dist ./internal/api/dist
 ARG VERSION=dev
+ARG TARGETOS
+ARG TARGETARCH
 # CGO stays off: the SQLite driver is pure Go, so the result is a static binary
-# that runs on any base image.
-RUN CGO_ENABLED=0 go build -trimpath \
+# that runs on any base image — and cross-compiles without a toolchain.
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -trimpath \
       -ldflags "-s -w -X main.version=${VERSION}" \
       -o /fret ./cmd/fret
 
