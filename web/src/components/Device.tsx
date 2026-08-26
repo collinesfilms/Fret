@@ -372,8 +372,8 @@ export function Scroller({
  */
 const EXCHANGE_MS = 110 + 120 + 110 + 180
 
-function morphMs(mode: Exchange): number {
-  return (mode === 'level' ? 0 : 200) + EXCHANGE_MS + 60
+function morphMs(mode: Exchange, lamp: boolean | undefined): number {
+  return (lamp && mode !== 'level' ? 200 : 0) + EXCHANGE_MS + 60
 }
 
 /**
@@ -419,7 +419,19 @@ function characters(line: string): string[] {
  * the whole line given once instead — a screen reader handed a span per
  * character reads it out letter by letter.
  */
-export function Morph({ children }: { children: string }) {
+export function Morph({
+  children,
+  lamp,
+}: {
+  children: string
+  /**
+   * There is a lamp beside this label, so the box's width has to change on a
+   * schedule rather than whenever it likes — see device.css. Without one the
+   * label is centred on a centre that never moves, and the sequencing would
+   * only add a wait to a confirmation somebody is looking at.
+   */
+  lamp?: boolean
+}) {
   const [pair, setPair] = useState<{ current: string; leaving: string | null }>({
     current: children,
     leaving: null,
@@ -453,17 +465,18 @@ export function Morph({ children }: { children: string }) {
     window.clearTimeout(timer.current)
     timer.current = window.setTimeout(
       () => setPair((previous) => ({ ...previous, leaving: null })),
-      morphMs(box.mode),
+      morphMs(box.mode, lamp),
     )
     // Keyed on the mode as well as the line. The mode is settled by a layout
     // effect one level down, so on the render that starts an exchange it can
     // still be the previous one's — and a grow read as a level would take the
     // outgoing line out of the DOM a --durSettle before it has finished
     // leaving. Re-arming when it lands costs a frame and nothing else.
-  }, [pair.leaving, box.mode])
+  }, [pair.leaving, box.mode, lamp])
 
   const classes = [
     'fret-morph',
+    lamp && 'fret-morph--lamp',
     arriving && 'fret-morph--exchanging',
     arriving && box.mode !== 'level' && `fret-morph--${box.mode}`,
   ]

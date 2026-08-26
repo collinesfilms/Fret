@@ -332,5 +332,10 @@
     animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    /* Delays too, not just durations. A label's box waits a whole exchange
+       before closing up behind the text, and zeroing only the duration leaves
+       that wait intact — the lamp would hold its old place for half a second
+       and then snap, which is worse than the movement it replaced. */
+    transition-delay: 0s !important;
   }
 }

@@ -514,6 +514,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /*
+   * Centred, because it is no longer the width of what contains it.
+   *
+   * A block box with `width: auto` fills its parent, and the label rode along
+   * centred inside that. Giving it a measured width makes it shrink-to-fit,
+   * and a shrink-to-fit block sits at its parent's leading edge — so on a
+   * control that is not a flex row (the row actions in the transfers sheet)
+   * the box started growing from the left and dragged the text sideways with
+   * it. Auto margins put it back in the middle. Inside a key it changes
+   * nothing: the label is a flex item that shrink-wraps this, so there is no
+   * free space for the margins to take.
+   */
+  margin-inline: auto;
 
   /*
    * This box is also the lamp's position.
@@ -548,11 +561,17 @@
   transition: width var(--durSettle) var(--easeOut) var(--fret-morph-hold);
 }
 
-.fret-morph--grow {
+/*
+ * Only where something sits beside the label. A label with nothing next to it
+ * is centred on a centre that does not move, so the width can change whenever
+ * it likes and the sequencing would buy nothing — it would only spend a
+ * --durSettle doing nothing before a confirmation the finger is waiting on.
+ */
+.fret-morph--lamp.fret-morph--grow {
   --fret-morph-lead: var(--durSettle);
 }
 
-.fret-morph--shrink {
+.fret-morph--lamp.fret-morph--shrink {
   --fret-morph-hold: var(--durExchange);
 }
 

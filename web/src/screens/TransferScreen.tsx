@@ -533,8 +533,10 @@ export function TransferScreen({
               onClick={keyState.action}
             >
               {/* The label is the status readout for this key, so it changes
-                  by being replaced rather than rewritten in place. */}
-              <Morph>{keyState.label}</Morph>
+                  by being replaced rather than rewritten in place. The lamp
+                  rides on this label's width, so the exchange has to make
+                  room for it before it starts — see Morph. */}
+              <Morph lamp>{keyState.label}</Morph>
             </Key>
             <Key
               variant="alt"
