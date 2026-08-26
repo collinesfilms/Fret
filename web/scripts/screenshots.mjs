@@ -215,6 +215,49 @@ async function captureTray() {
   await context.close()
 }
 
+/**
+ * A drop far bigger than the device.
+ *
+ * Twenty-four files is an ordinary batch of stills and the one case that
+ * breaks a list nobody capped — this shot exists so that stays true.
+ */
+async function captureManyFiles() {
+  const { context, page } = await open({ viewport: DESKTOP_TALL })
+  await page.setInputFiles(
+    'input[type=file]',
+    Array.from({ length: 24 }, (_, i) =>
+      payload(`still_${String(i + 1).padStart(4, '0')}_16bit.tif`, 48 << 10),
+    ),
+  )
+  await page.waitForFunction(
+    () => document.querySelector('.fret-screen__stripLabel')?.textContent === 'upload complete',
+    undefined,
+    { timeout: 120_000 },
+  )
+  await page.waitForTimeout(1000)
+  // Part-scrolled, so both fades are showing at once.
+  await page.locator('.fret-filelist').evaluate((element) => {
+    element.scrollTop = 60
+  })
+  await page.waitForTimeout(400)
+  await shot(page, 'many-files')
+  await context.close()
+}
+
+/** A row of the transfers list opened on its contents. */
+async function captureRowOpen() {
+  const { context, page } = await open({ viewport: DESKTOP_TALL })
+  await page.click('.fret-pill')
+  await page.waitForTimeout(400)
+  await page.locator('.fret-sheet input.fret-field').fill('client-review-oct')
+  await page.waitForTimeout(400)
+  await page.locator('.fret-row__main').first().click()
+  await page.waitForSelector('.fret-filelist__row')
+  await page.waitForTimeout(700)
+  await shot(page, 'row-open')
+  await context.close()
+}
+
 /** The settings at phone width, where they arrive as a sheet from the bottom. */
 async function captureMobileSettings() {
   const { context, page } = await open({ viewport: MOBILE })
@@ -342,6 +385,8 @@ const SHOTS = {
   // ready.png both come out of this.
   upload: captureUploadAndReady,
   'options-tray': captureTray,
+  'many-files': captureManyFiles,
+  'row-open': captureRowOpen,
   'mobile-tray': captureMobileTray,
   'sheet-light': () => captureSheet('light'),
   'sheet-dark': () => captureSheet('dark'),

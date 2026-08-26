@@ -181,24 +181,32 @@
   height: 0;
   opacity: 0;
   overflow: hidden;
-  /*
-   * Cancels the panel's row gap while closed. A flex gap applies between every
-   * pair of children, including a child of zero height, so a collapsed device
-   * was carrying a band of empty space under its vent that nothing occupied —
-   * twice the space above it. The margin animates with the height, so the gap
-   * arrives exactly as the settings do.
-   */
-  margin-top: -16px;
   transition: height var(--durPanel) var(--easeOut),
     margin-top var(--durPanel) var(--easeOut), opacity var(--durBase) ease;
 }
 
 .fret-grow--open {
-  margin-top: 0;
   opacity: 1;
 }
 
-.fret-grow__inner {
+/*
+ * The device's own growth carries one extra job.
+ *
+ * The negative margin cancels the panel's row gap while closed: a flex gap
+ * applies between every pair of children, including a child of zero height,
+ * so a collapsed device was carrying a band of empty space under its vent
+ * that nothing occupied — twice the space above it. It animates with the
+ * height, so the gap arrives exactly as the settings do.
+ */
+.fret-grow--panel {
+  margin-top: -16px;
+}
+
+.fret-grow--panel.fret-grow--open {
+  margin-top: 0;
+}
+
+.fret-grow--panel .fret-grow__inner {
   /*
    * The keys inside cast a shadow ~15px below themselves, which the clip above
    * would otherwise cut off flat. The padding gives it somewhere to land, and
@@ -478,8 +486,9 @@
     overflow-y: auto;
     border-radius: 20px 20px 0 0;
     border-bottom: none;
-    /* The home indicator sits over the last row otherwise. */
-    padding: 0 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    /* The last control sits on the edge of the screen otherwise, where the
+       home indicator lives and where a thumb rests. */
+    padding: 0 16px calc(34px + env(safe-area-inset-bottom, 0px));
     box-shadow: var(--shUp);
     animation: fretSheetUp var(--durSheet) var(--easeOut) both;
   }

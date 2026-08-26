@@ -105,10 +105,17 @@
   gap: 12px;
 }
 
+/*
+ * The last row of a bottom sheet sits right on the edge of the screen, where
+ * the home indicator lives and where a thumb rests. The safe-area inset alone
+ * is not enough — it is zero on plenty of devices that still want the room —
+ * so the floor is generous and the inset is added to it rather than compared
+ * against it.
+ */
 @media (max-width: 640px) {
   .fret-sheet__body {
     padding-top: 6px;
-    padding-bottom: max(24px, env(safe-area-inset-bottom));
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -293,19 +300,25 @@
 }
 
 /* A padlock badge, in neutral grey: a password is a feature, not a problem. */
+/*
+ * The badge is bottom-aligned because the shackle is drawn as a pseudo-element
+ * above the body and so counts for nothing in the layout. At 16px the shackle
+ * cleared the ring by about a pixel and the whole thing read as jammed into
+ * the corner; 18px gives the drawing the same air top and bottom.
+ */
 .fret-tile__lock {
   position: absolute;
-  top: -5px;
-  right: -5px;
-  width: 16px;
-  height: 16px;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
   border-radius: 999px;
   background: var(--body);
   border: 1px solid var(--edge);
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding-bottom: 3px;
+  padding-bottom: 3.5px;
 }
 
 .fret-lock {
@@ -432,26 +445,50 @@
   transform: rotate(90deg);
 }
 
-.fret-rowactions {
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
-  transition: max-height var(--durBase) var(--easeOut), opacity var(--durFast) ease;
+/*
+ * The opened row: what is in the transfer, then what you can do to it.
+ *
+ * It reuses the device's growth rather than a max-height, because it now
+ * holds a list of unknown length — a ceiling either clips a long one or makes
+ * a short one ease against nothing. Faster than the panel's, though: a row is
+ * a small thing opening, not a device unfolding.
+ */
+.fret-rowdrawer {
+  background: var(--bgHi);
+  transition: height var(--durBase) var(--easeOut), opacity var(--durFast) ease;
 }
 
-.fret-rowactions--open {
-  /* Generous enough that a longer translation cannot be clipped. */
-  max-height: 60px;
-  opacity: 1;
+:root[data-theme='dark'] .fret-rowdrawer {
+  background: var(--bg);
+}
+
+.fret-rowdrawer .fret-filelist {
+  margin: 0;
+  padding: 2px 12px;
+}
+
+/* Held while the contents are on their way. Deliberately the same height as
+   a single file row, so the strip below does not jump when they land. */
+.fret-rowfiles__waiting {
+  padding: 14px 12px;
+  font-family: var(--mono);
+  font-size: 7.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg3);
 }
 
 /*
- * The actions read as a continuation of the row rather than a card dropped on
- * top of it: no fills, no boxes, no drawn icons — just hairline-divided cells
- * carrying the same mono micro-labels used everywhere else in the sheet.
+ * The actions still read as part of the row rather than a card dropped on it
+ * — hairline-divided cells, no boxes, no drawn icons — but they no longer
+ * disappear into it. They carry the body material against the sunken list
+ * around them, and their labels are at full strength: these are the four
+ * things you opened the row to do, and a control you have to hunt for is not
+ * quieter, it is worse.
  */
 .fret-rowactions__strip {
   display: flex;
+  background: var(--body);
   border-top: 1px solid var(--edge);
 }
 
@@ -467,7 +504,7 @@
   font-size: 8px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--fg2);
+  color: var(--fg);
   cursor: pointer;
   transition: background var(--durFast) ease, color var(--durFast) ease, box-shadow var(--durFast) ease;
 }
@@ -477,8 +514,7 @@
 }
 
 .fret-rowaction:hover {
-  background: var(--body);
-  color: var(--fg);
+  background: var(--bodyHi);
 }
 
 /*

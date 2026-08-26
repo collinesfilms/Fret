@@ -102,6 +102,15 @@ have actually landed.
   <img src="docs/screenshots/ready.png" alt="A completed transfer" width="720">
 </p>
 
+A long drop does not stretch the device. The file list stops growing and starts
+scrolling, and fades at whichever edge it is hiding something behind — where a
+fade appears, there is more. The readout and the keys stay exactly where they
+were, which matters most while bytes are still moving.
+
+<p align="center">
+  <img src="docs/screenshots/many-files.png" alt="A transfer of twenty-four files" width="720">
+</p>
+
 ### Options
 
 Most transfers need no adjusting, so the device shows three keys and keeps the
@@ -129,6 +138,14 @@ are random strings by default, so a list of them is a list of things you cannot
 tell apart. The first filename is the thing you remember sending. The link is
 still on the line below, because it is what you came to copy, and search matches
 either one.
+
+Opening a row answers the question the list cannot: what is actually in this.
+The contents come first and the actions sit under them, because that is the
+order you want — check you have the right transfer, then act on it.
+
+<p align="center">
+  <img src="docs/screenshots/row-open.png" alt="A transfer row opened on its contents" width="800">
+</p>
 
 <p align="center">
   <img src="docs/screenshots/sheet-light.png" alt="The transfers sheet" width="800">

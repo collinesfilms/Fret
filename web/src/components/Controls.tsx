@@ -123,7 +123,15 @@ export function Segmented<T extends string>({
  * it safe: the content changes height on its own — a slug error appears, the
  * file list grows — and a stale measurement would clip it.
  */
-export function Grow({ open, children }: { open: boolean; children: ReactNode }) {
+export function Grow({
+  open,
+  className = '',
+  children,
+}: {
+  open: boolean
+  className?: string
+  children: ReactNode
+}) {
   const inner = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState(0)
 
@@ -139,7 +147,7 @@ export function Grow({ open, children }: { open: boolean; children: ReactNode })
 
   return (
     <div
-      className={`fret-grow${open ? ' fret-grow--open' : ''}`}
+      className={`fret-grow${open ? ' fret-grow--open' : ''}${className ? ` ${className}` : ''}`}
       style={{ height: open ? height : 0 }}
       // Keeps the collapsed settings out of the tab order rather than leaving
       // invisible fields focusable behind the closed panel.

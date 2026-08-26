@@ -72,6 +72,7 @@ const en = {
   'sheet.noResults': 'nothing matches',
   'sheet.files': 'files',
   'sheet.andMore': '+{count}',
+  'sheet.loadingFiles': 'reading…',
   'sheet.downloads': '{count} downloads',
   'sheet.noDownloads': 'no downloads',
 
@@ -198,6 +199,7 @@ const fr: Record<StringKey, string> = {
   'sheet.noResults': 'aucun résultat',
   'sheet.files': 'fichiers',
   'sheet.andMore': '+{count}',
+  'sheet.loadingFiles': 'lecture…',
   'sheet.downloads': '{count} téléchargements',
   'sheet.noDownloads': 'aucun téléchargement',
 

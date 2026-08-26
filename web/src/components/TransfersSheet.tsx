@@ -4,11 +4,11 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { TransferSummary } from '../lib/api'
+import { api, type TransferFile, type TransferSummary } from '../lib/api'
 import { countdown, formatBytes, plural } from '../lib/format'
 import { translate, type Locale, type StringKey } from '../lib/i18n'
-import { Segmented } from './Controls'
-import { Morph } from './Device'
+import { Grow, Segmented } from './Controls'
+import { FileList, Morph } from './Device'
 
 type Filter = 'all' | 'expiring' | 'locked'
 
@@ -355,6 +355,34 @@ function Row({
   const expiry = countdown(transfer.expiresAt)
   const tab = leaving ? -1 : interactive ? 0 : -1
 
+  /*
+   * The contents, fetched the first time the row is opened and kept.
+   *
+   * The list endpoint deliberately carries one file name per transfer and not
+   * the rest: a hundred rows of a hundred files each would be a megabyte of
+   * JSON to render five lines of summary. Almost nobody opens a row, so the
+   * cost belongs to the person who does.
+   */
+  const [files, setFiles] = useState<TransferFile[] | null>(null)
+
+  useEffect(() => {
+    if (!open || files !== null) return
+    let cancelled = false
+    api
+      .getTransfer(transfer.id)
+      .then((full) => {
+        if (!cancelled) setFiles(full.files ?? [])
+      })
+      .catch(() => {
+        // Nothing to say: the row's own summary already states the count, and
+        // an error banner inside a row would be louder than the failure.
+        if (!cancelled) setFiles([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open, files, transfer.id])
+
   return (
     <div
       className={`fret-list__row${leaving ? ' fret-list__row--leaving' : ''}`}
@@ -422,11 +450,22 @@ function Row({
       </button>
 
       {/*
-        A drawer in the same material as the row rather than a card of tiles
-        sitting on top of it: hairline-divided cells and mono labels, which is
-        the vocabulary the rest of the sheet already speaks.
+        Opening a row answers the question the list cannot: what is actually
+        in this. The names sit above the actions because that is the order you
+        want them in — you look to check you have the right transfer, then you
+        act on it.
+
+        The height is measured rather than capped at a guess. The old
+        max-height worked while the drawer held one fixed row of buttons; a
+        list of unknown length inside it would either be clipped or ease
+        against a ceiling it never reaches.
       */}
-      <div className={`fret-rowactions${open ? ' fret-rowactions--open' : ''}`}>
+      <Grow open={open} className="fret-rowdrawer">
+        {files === null ? (
+          <div className="fret-rowfiles__waiting">{t('sheet.loadingFiles')}</div>
+        ) : (
+          <FileList files={files} plain cap={168} />
+        )}
         <div className="fret-rowactions__strip">
           <Action
             label={t('action.copy')}
@@ -449,7 +488,7 @@ function Row({
             tabIndex={open ? tab : -1}
           />
         </div>
-      </div>
+      </Grow>
       </div>
     </div>
   )

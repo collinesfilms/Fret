@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Grow, LiveField, Segmented, SettingsRow, Tray } from '../components/Controls'
-import { Key, LinkReadout, Morph, Panel, Screen, Strip, Vent } from '../components/Device'
+import { FileList, Key, LinkReadout, Morph, Panel, Screen, Strip, Vent } from '../components/Device'
 import { api, ApiError, type Expiry, type Me, type Resumable, type Transfer } from '../lib/api'
 import { filterSlug, formatBytes, rate, remaining, splitBytes } from '../lib/format'
 import { fileCount, translate, type Locale, type StringKey } from '../lib/i18n'
@@ -458,14 +458,13 @@ export function TransferScreen({
                 }
               />
 
-              <div className="fret-filelist">
-                {files.map((file) => (
-                  <div className="fret-filelist__row" key={file.id}>
-                    <span className="fret-filelist__name">{file.name}</span>
-                    <span className="fret-filelist__size">{formatBytes(file.size)}</span>
-                  </div>
-                ))}
-              </div>
+              {/*
+                Capped and scrolling. A hundred stills is a perfectly ordinary
+                drop, and an uncapped list would push the readout and the keys
+                off the bottom of the device — which is the one part of this
+                screen that has to stay where it is while bytes are moving.
+              */}
+              <FileList files={files} />
 
               <div className="fret-readout">
                 {uploading ? (
@@ -518,7 +517,7 @@ export function TransferScreen({
           adjusted to is real but out of the way, which is the point — most
           transfers need none of it.
         */}
-        <Grow open={phase !== 'empty'}>
+        <Grow open={phase !== 'empty'} className="fret-grow--panel">
           <div className="fret-actions">
             <Key
               className="fret-actions__primary"

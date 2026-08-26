@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from 'react'
 import { Field } from '../components/Controls'
-import { Key, Panel, Screen, Strip, Typed, Vent } from '../components/Device'
+import { FileList, Key, Panel, Screen, Strip, Typed, Vent } from '../components/Device'
 import { api, ApiError, archiveUrl, fileUrl, type PublicTransfer } from '../lib/api'
 import { countdown, formatBytes } from '../lib/format'
 import { fileCount, translate, type Locale, type StringKey } from '../lib/i18n'
@@ -192,31 +192,27 @@ function ReadyView({ transfer, locale }: { transfer: PublicTransfer; locale: Loc
           </Typed>
         </div>
 
-        <div className="fret-filelist" style={{ marginTop: 8, maxHeight: 260 }}>
-          {transfer.files.map((file) => (
-            <div className="fret-filelist__row" key={file.id} style={{ padding: '8px 0' }}>
-              <span className="fret-filelist__name">{file.name}</span>
-              <span className="fret-filelist__size">{formatBytes(file.size)}</span>
-              {/*
-                Per-file buttons only earn their place when there is a choice to
-                make. With one file the key below already does it, and a second
-                control for the same act is just another thing to read.
+        {/*
+          Per-file buttons only earn their place when there is a choice to
+          make. With one file the key below already does it, and a second
+          control for the same act is just another thing to read.
 
-                A single file goes straight to storage over a presigned URL, so
-                the bytes never pass through the Fret server.
-              */}
-              {!single && (
-                <a
-                  href={fileUrl(transfer.slug, file.id)}
-                  className="fret-dl"
-                  aria-label={`Download ${file.name}`}
-                >
-                  ↓
-                </a>
-              )}
-            </div>
-          ))}
-        </div>
+          A single file goes straight to storage over a presigned URL, so the
+          bytes never pass through the Fret server.
+        */}
+        <FileList files={transfer.files} cap={260}>
+          {(file) =>
+            single ? null : (
+              <a
+                href={fileUrl(transfer.slug, file.id)}
+                className="fret-dl"
+                aria-label={`Download ${file.name}`}
+              >
+                ↓
+              </a>
+            )
+          }
+        </FileList>
       </Screen>
 
       <Vent />

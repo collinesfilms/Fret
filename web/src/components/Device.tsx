@@ -5,7 +5,16 @@
  * keys are the only elements permitted real depth.
  */
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
+
+import { formatBytes } from '../lib/format'
 
 export function Panel({
   children,
@@ -236,6 +245,105 @@ export function Strip({
       <Lamp color={color} size={6} pulse={pulse} />
       <span className="fret-screen__stripLabel">{label}</span>
       {right && <span className="fret-screen__stripRight">{right}</span>}
+    </div>
+  )
+}
+
+/**
+ * The list of what is in a transfer.
+ *
+ * The same list in three places — the device while a transfer is arriving, the
+ * recipient page, and a row of the transfers list — because it is the same
+ * question in all three: what is actually in this. It sits on the black
+ * readout in the first two and on the body material in the third, which is
+ * the only thing `plain` changes.
+ *
+ * Capped and scrolling, because a transfer can be a hundred stills and a list
+ * that long would push everything else off the screen. The cap is the point:
+ * it is a readout of a transfer, not a file browser.
+ */
+export function FileList({
+  files,
+  plain,
+  cap,
+  children,
+}: {
+  files: { id: string; name: string; size: number }[]
+  /** On the body material rather than the readout screen. */
+  plain?: boolean
+  /** Overrides the height it stops growing at. */
+  cap?: number
+  /** Rendered at the end of each row, e.g. a per-file download. */
+  children?: (file: { id: string; name: string; size: number }) => ReactNode
+}) {
+  return (
+    <Scroller
+      className={`fret-filelist${plain ? ' fret-filelist--plain' : ''}`}
+      style={cap === undefined ? undefined : { maxHeight: cap }}
+    >
+      {files.map((file) => (
+        <div className="fret-filelist__row" key={file.id}>
+          <span className="fret-filelist__name">{file.name}</span>
+          <span className="fret-filelist__size">{formatBytes(file.size)}</span>
+          {children?.(file)}
+        </div>
+      ))}
+    </Scroller>
+  )
+}
+
+/**
+ * A scrolling box that fades only at the edges it is actually hiding content
+ * behind.
+ *
+ * A static gradient at both ends is the usual way to do this and it lies: it
+ * dims the first row of a list that is already fully visible, and it keeps
+ * dimming the last row after you have scrolled to it, so the one moment you
+ * need to read the bottom line is the moment it is faded out. Tracking the
+ * scroll position costs one listener and makes the fade mean something —
+ * where it appears, there is more.
+ */
+export function Scroller({
+  className = '',
+  style,
+  children,
+}: {
+  className?: string
+  style?: CSSProperties
+  children: ReactNode
+}) {
+  const box = useRef<HTMLDivElement>(null)
+  const [edges, setEdges] = useState<'none' | 'top' | 'bottom' | 'both'>('none')
+
+  useLayoutEffect(() => {
+    const element = box.current
+    if (!element) return
+
+    const measure = () => {
+      // A pixel of slack: fractional scroll offsets and zoom leave
+      // scrollTop a hair short of the end, which would strand the bottom
+      // fade permanently on.
+      const above = element.scrollTop > 1
+      const below = element.scrollTop + element.clientHeight < element.scrollHeight - 1
+      setEdges(above && below ? 'both' : above ? 'top' : below ? 'bottom' : 'none')
+    }
+
+    measure()
+    element.addEventListener('scroll', measure, { passive: true })
+    // The box changes height when the panel grows, and the content changes
+    // height when files arrive; both change whether there is anything to fade.
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    if (element.firstElementChild) observer.observe(element.firstElementChild)
+    return () => {
+      element.removeEventListener('scroll', measure)
+      observer.disconnect()
+    }
+  }, [children])
+
+  return (
+    <div className={`fret-scroll ${className}`.trim()} data-fade={edges} style={style} ref={box}>
+      <div className="fret-scroll__inner">{children}</div>
     </div>
   )
 }

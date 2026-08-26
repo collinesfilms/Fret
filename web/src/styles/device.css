@@ -212,13 +212,79 @@
  * of the screen while giving the scroll container room on every side. Without
  * it the pulsing ring on the download buttons is clipped flat against the edge.
  */
-.fret-filelist {
-  margin: 4px -10px 0;
-  padding: 8px 10px;
-  max-height: 184px;
+/*
+ * A scrolling box that fades at the edges it is hiding something behind.
+ *
+ * The mask is applied per state rather than always: a gradient at both ends
+ * permanently dims the first and last rows of a list that fits, and keeps the
+ * bottom row dimmed after you have scrolled to it — which is the one moment
+ * you needed to read it. Where a fade appears, there is more.
+ *
+ * The mask paints the element's own box, not its scrolled content, so the
+ * gradient stays pinned to the edges while the rows travel under it.
+ */
+.fret-scroll {
   overflow-y: auto;
+  overscroll-behavior: contain;
   scrollbar-width: thin;
-  scrollbar-color: var(--screenLine) transparent;
+  scrollbar-color: var(--listLine) transparent;
+  transition: -webkit-mask-image var(--durFast) ease, mask-image var(--durFast) ease;
+}
+
+.fret-scroll[data-fade='top'] {
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 20px);
+  mask-image: linear-gradient(180deg, transparent 0, #000 20px);
+}
+
+.fret-scroll[data-fade='bottom'] {
+  -webkit-mask-image: linear-gradient(0deg, transparent 0, #000 20px);
+  mask-image: linear-gradient(0deg, transparent 0, #000 20px);
+}
+
+.fret-scroll[data-fade='both'] {
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent 0,
+    #000 20px,
+    #000 calc(100% - 20px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0,
+    #000 20px,
+    #000 calc(100% - 20px),
+    transparent 100%
+  );
+}
+
+/*
+ * The list of what is in a transfer.
+ *
+ * Its three colours are variables rather than fixed, because the same list
+ * appears on the black readout and on the body material and it is the same
+ * list — one set of rules, one set of proportions, two grounds.
+ */
+.fret-filelist {
+  --listFg: var(--screenFg);
+  --listDim: var(--screenDim);
+  --listLine: var(--screenLine);
+
+  margin: 4px -10px 0;
+  padding: 0 10px;
+  max-height: 184px;
+}
+
+.fret-filelist--plain {
+  --listFg: var(--fg);
+  --listDim: var(--fg3);
+  --listLine: var(--edge);
+}
+
+/* Padding lives on the inner track so the mask can reach the first and last
+   rows; on the box itself it would fade the padding instead. */
+.fret-filelist .fret-scroll__inner {
+  padding: 8px 0;
 }
 
 .fret-filelist__row {
@@ -227,28 +293,25 @@
   gap: 10px;
   padding: 5px 0;
 }
-
 .fret-filelist__row + .fret-filelist__row {
-  border-top: 1px solid var(--screenLine);
+  border-top: 1px solid var(--listLine);
 }
-
 .fret-filelist__name {
   font-family: var(--mono);
   font-size: 9.5px;
   letter-spacing: 0.04em;
-  color: var(--screenFg);
+  color: var(--listFg);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
   min-width: 0;
 }
-
 .fret-filelist__size {
   font-family: var(--mono);
   font-size: 9px;
   letter-spacing: 0.1em;
-  color: var(--screenDim);
+  color: var(--listDim);
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
 }
