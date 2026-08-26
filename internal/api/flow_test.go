@@ -868,6 +868,41 @@ func TestMintSlugRefusesAnotherUsersTransfer(t *testing.T) {
 	}
 }
 
+// The transfers list is titled by what is in a transfer, not by the link it
+// is reached at, so the list has to carry a file name per row.
+func TestListCarriesTheFirstFileName(t *testing.T) {
+	h := newHarness(t)
+	transfer := h.completeTransfer(t)
+
+	_, body := h.do(http.MethodGet, "/api/transfers", nil)
+	listing := decodeInto[struct {
+		Transfers []struct {
+			ID        string `json:"id"`
+			FirstFile string `json:"firstFile"`
+			FileCount int    `json:"fileCount"`
+		} `json:"transfers"`
+	}](t, body)
+
+	var found bool
+	for _, row := range listing.Transfers {
+		if row.ID != transfer.ID {
+			continue
+		}
+		found = true
+		// sampleFiles drops the media file first, and position — not rowid —
+		// is what decides which one that is.
+		if row.FirstFile != "reel_autumn_v4.mov" {
+			t.Errorf("first file is %q, want the file that was dropped first", row.FirstFile)
+		}
+		if row.FileCount != 3 {
+			t.Errorf("file count is %d, want 3", row.FileCount)
+		}
+	}
+	if !found {
+		t.Fatalf("the transfer is missing from the listing: %s", body)
+	}
+}
+
 // A transfer must still be allowed to keep its own name.
 func TestTransferCanKeepItsOwnSlug(t *testing.T) {
 	h := newHarness(t)

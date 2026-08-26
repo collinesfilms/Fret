@@ -77,8 +77,12 @@ type Transfer struct {
 	UpdatedAt    int64  `json:"-"`
 	Files        []File `json:"files,omitempty"`
 	FileCount    int    `json:"fileCount"`
-	SenderName   string `json:"senderName,omitempty"`
-	Expiry       string `json:"expiry"` // symbolic: 24h | 7d | 30d | never
+	// FirstFile is the name of the earliest file in the transfer, which is
+	// what the transfers list shows as a row's title. Populated only by
+	// ListTransfers; nothing else needs it.
+	FirstFile  string `json:"firstFile,omitempty"`
+	SenderName string `json:"senderName,omitempty"`
+	Expiry     string `json:"expiry"` // symbolic: 24h | 7d | 30d | never
 }
 
 // Expired reports whether the transfer's window has closed.

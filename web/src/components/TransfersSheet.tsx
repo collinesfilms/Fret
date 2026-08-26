@@ -8,6 +8,7 @@ import type { TransferSummary } from '../lib/api'
 import { countdown, formatBytes, plural } from '../lib/format'
 import { translate, type Locale, type StringKey } from '../lib/i18n'
 import { Segmented } from './Controls'
+import { Morph } from './Device'
 
 type Filter = 'all' | 'expiring' | 'locked'
 
@@ -21,6 +22,9 @@ const DISMISS_AFTER = 70
  * under would cut the row off mid-fall.
  */
 const DEPART_MS = 340
+
+/** How long a row action holds its confirmation before reverting. */
+const CONFIRM_MS = 1600
 
 /** Which row action is currently held open, so its cell can read as pressed. */
 export interface EngagedAction {
@@ -84,7 +88,18 @@ export function TransfersSheet({
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase()
     return transfers.filter((transfer) => {
-      if (needle && !transfer.slug.toLowerCase().includes(needle)) return false
+      /*
+       * Matched against both the name and the link, because the row now shows
+       * one and is reached by the other. Searching only the slug would mean
+       * typing the exact thing on screen and being told there are no results.
+       */
+      if (
+        needle &&
+        !transfer.slug.toLowerCase().includes(needle) &&
+        !transfer.firstFile.toLowerCase().includes(needle)
+      ) {
+        return false
+      }
       if (filter === 'locked') return transfer.hasPassword
       if (filter === 'expiring') return countdown(transfer.expiresAt, now).soon
       return true
@@ -360,13 +375,37 @@ function Row({
           )}
         </span>
 
+        {/*
+          Titled by what is in it, not by how it is reached.
+          
+          A slug is a random string by default, so a list of them is a list of
+          things you cannot tell apart — you would have to open each one to
+          find the transfer you meant. The first filename is the thing you
+          actually remember sending. The link is still here, on the line
+          below, because it is what you came to copy.
+        */}
         <span className="fret-row__text">
-          <span className="fret-row__slug">{transfer.slug}</span>
+          <span className="fret-row__title">
+            {transfer.firstFile || transfer.slug}
+            {transfer.fileCount > 1 && (
+              <span className="fret-row__plus">
+                {t('sheet.andMore', { count: transfer.fileCount - 1 })}
+              </span>
+            )}
+          </span>
+          {/*
+            No count when nothing has been downloaded. It used to say so, and
+            with the link now sharing this line it pushed every row into
+            "NO DOWNL…" — the least useful thing on the line, truncated, on
+            every row at once. A count that appears when there is one to show
+            says the same thing by being absent, and says it without spending
+            a third of the line to do it.
+          */}
           <span className="fret-row__meta">
-            {formatBytes(transfer.totalBytes)} ·{' '}
-            {transfer.downloads === 0
-              ? t('sheet.noDownloads')
-              : t('sheet.downloads', { count: transfer.downloads })}
+            <span className="fret-row__slug">{transfer.slug}</span>
+            {' · '}
+            {formatBytes(transfer.totalBytes)}
+            {transfer.downloads > 0 && ` · ${t('sheet.downloads', { count: transfer.downloads })}`}
           </span>
         </span>
 
@@ -389,7 +428,12 @@ function Row({
       */}
       <div className={`fret-rowactions${open ? ' fret-rowactions--open' : ''}`}>
         <div className="fret-rowactions__strip">
-          <Action label={t('action.copy')} onClick={onCopy} tabIndex={open ? tab : -1} />
+          <Action
+            label={t('action.copy')}
+            confirm={t('action.copied')}
+            onClick={onCopy}
+            tabIndex={open ? tab : -1}
+          />
           <Action
             label={t('action.edit')}
             onClick={onEdit}
@@ -413,34 +457,59 @@ function Row({
 
 function Action({
   label,
+  confirm,
   onClick,
   danger,
   engaged,
   tabIndex,
 }: {
   label: string
+  /**
+   * Shown briefly in place of the label after a press, for an action that
+   * leaves nothing on screen to prove it happened. Copy is the whole reason
+   * this exists: the clipboard is invisible, so without a word here the only
+   * way to know the press registered is to go and paste it somewhere.
+   */
+  confirm?: string
   onClick: () => void
   danger?: boolean
   /** True while the surface this opens is still open. */
   engaged?: boolean
   tabIndex?: number
 }) {
+  const [confirmed, setConfirmed] = useState(false)
+  const timer = useRef<number | undefined>(undefined)
+
+  useEffect(() => () => window.clearTimeout(timer.current), [])
+
+  const press = () => {
+    onClick()
+    if (!confirm) return
+    setConfirmed(true)
+    // Cleared by its own timer rather than an effect cleanup, which would
+    // cancel it on the very re-render the state change causes.
+    window.clearTimeout(timer.current)
+    timer.current = window.setTimeout(() => setConfirmed(false), CONFIRM_MS)
+  }
+
   const classes = [
     'fret-rowaction',
     danger && 'fret-rowaction--danger',
     engaged && 'fret-rowaction--engaged',
+    confirmed && 'fret-rowaction--confirmed',
   ]
     .filter(Boolean)
     .join(' ')
+
   return (
     <button
       type="button"
       className={classes}
-      onClick={onClick}
+      onClick={press}
       aria-expanded={engaged === undefined ? undefined : engaged}
       tabIndex={tabIndex}
     >
-      {label}
+      <Morph>{confirmed && confirm ? confirm : label}</Morph>
     </button>
   )
 }

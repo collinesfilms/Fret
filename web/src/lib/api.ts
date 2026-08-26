@@ -51,6 +51,8 @@ export interface TransferSummary {
   id: string
   slug: string
   sharedSlug: string
+  /** The first file in the transfer, which is what a row is titled by. */
+  firstFile: string
   fileCount: number
   totalBytes: number
   downloads: number

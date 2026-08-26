@@ -124,6 +124,12 @@ carries urgency, and an "expiring soon" section would break the history reading
 that makes the list scannable. Tapping a row reveals copy, edit, open and
 delete.
 
+Rows are titled by what is in them, not by the link they are reached at: slugs
+are random strings by default, so a list of them is a list of things you cannot
+tell apart. The first filename is the thing you remember sending. The link is
+still on the line below, because it is what you came to copy, and search matches
+either one.
+
 <p align="center">
   <img src="docs/screenshots/sheet-light.png" alt="The transfers sheet" width="800">
 </p>

@@ -37,6 +37,7 @@ type transferSummary struct {
 	ID          string `json:"id"`
 	Slug        string `json:"slug"`
 	SharedSlug  string `json:"sharedSlug"`
+	FirstFile   string `json:"firstFile"`
 	FileCount   int    `json:"fileCount"`
 	TotalBytes  int64  `json:"totalBytes"`
 	Downloads   int64  `json:"downloads"`
@@ -48,7 +49,8 @@ type transferSummary struct {
 
 func summarize(t *db.Transfer) transferSummary {
 	return transferSummary{
-		ID: t.ID, Slug: t.Slug, SharedSlug: t.SharedSlug, FileCount: t.FileCount,
+		ID: t.ID, Slug: t.Slug, SharedSlug: t.SharedSlug,
+		FirstFile: t.FirstFile, FileCount: t.FileCount,
 		TotalBytes: t.TotalBytes, Downloads: t.Downloads,
 		HasPassword: t.HasPassword, Expiry: t.Expiry,
 		ExpiresAt: t.ExpiresAt, CreatedAt: t.CreatedAt,

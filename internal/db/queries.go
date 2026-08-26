@@ -185,8 +185,15 @@ func (d *DB) MarkShared(ctx context.Context, id string) error {
 
 // ListTransfers returns a user's transfers, newest first, for the sheet.
 func (d *DB) ListTransfers(ctx context.Context, userID int64) ([]Transfer, error) {
+	// A transfer is remembered by what is in it, so the list carries one file
+	// name per row. Ordered by position, which is the order the files were
+	// dropped in — the same order the sender was looking at when they sent it,
+	// and the same one the recipient sees. Ordering by rowid would usually
+	// agree and would stop agreeing the moment anything reinserts a row.
 	rows, err := d.QueryContext(ctx, `
-		SELECT `+prefixCols(transferCols, "t")+`, COUNT(f.id)
+		SELECT `+prefixCols(transferCols, "t")+`, COUNT(f.id),
+		       COALESCE((SELECT name FROM files WHERE transfer_id = t.id
+		                 ORDER BY position LIMIT 1), '')
 		FROM transfers t LEFT JOIN files f ON f.transfer_id = t.id
 		WHERE t.user_id = ? AND t.status = 'live'
 		GROUP BY t.id
@@ -200,7 +207,7 @@ func (d *DB) ListTransfers(ctx context.Context, userID int64) ([]Transfer, error
 	for rows.Next() {
 		var t Transfer
 		if err := rows.Scan(&t.ID, &t.UserID, &t.Slug, &t.SharedSlug, &t.Status, &t.PasswordHash, &t.Expiry, &t.ExpiresAt,
-			&t.TotalBytes, &t.Downloads, &t.CreatedAt, &t.CompletedAt, &t.UpdatedAt, &t.FileCount); err != nil {
+			&t.TotalBytes, &t.Downloads, &t.CreatedAt, &t.CompletedAt, &t.UpdatedAt, &t.FileCount, &t.FirstFile); err != nil {
 			return nil, err
 		}
 		t.HasPassword = t.PasswordHash != ""

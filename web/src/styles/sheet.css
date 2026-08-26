@@ -339,12 +339,16 @@
  * display: without it they flow inline and collide on one line, and neither
  * the margin nor the ellipsis truncation below would apply.
  */
-.fret-row__slug,
+.fret-row__title,
 .fret-row__meta {
   display: block;
 }
 
-.fret-row__slug {
+/*
+ * The row's title: the first filename, in the human typeface, because it is a
+ * name somebody chose rather than a value the machine produced.
+ */
+.fret-row__title {
   font-size: 13px;
   font-weight: 500;
   letter-spacing: -0.018em;
@@ -354,6 +358,37 @@
   white-space: nowrap;
 }
 
+/*
+ * "+3" for the files the title does not name. Mono and dim: it is a count,
+ * and must never be mistaken for part of the filename beside it.
+ */
+.fret-row__plus {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  color: var(--fg3);
+  margin-left: 7px;
+}
+
+/*
+ * The link, demoted to the meta line but still the brightest thing on it: it
+ * is the one part of that line that identifies the transfer rather than
+ * describing it, and slugs are lowercase, so it opts out of the uppercasing
+ * the rest of the line takes.
+ */
+.fret-row__slug {
+  color: var(--fg2);
+  text-transform: none;
+  letter-spacing: 0.06em;
+}
+
+/*
+ * The second line: link, size, downloads, in that order — most identifying
+ * first. It truncates rather than wrapping, because a wrapped meta line makes
+ * one row taller than its neighbours and the list stops being a list. The
+ * order is what makes truncation safe: what gets cut is always the part you
+ * were least likely to be reading.
+ */
 .fret-row__meta {
   font-family: var(--mono);
   font-size: 7.5px;
@@ -361,6 +396,9 @@
   text-transform: uppercase;
   color: var(--fg3);
   margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .fret-row__right {
@@ -441,6 +479,39 @@
 .fret-rowaction:hover {
   background: var(--body);
   color: var(--fg);
+}
+
+/*
+ * Every action recesses under the finger, not just the two that open
+ * something. Copy and Open leave nothing behind on screen, so without this
+ * the only feedback for pressing them was the label changing colour — which
+ * on a phone happens under the thumb that is covering it.
+ *
+ * It is the engaged treatment at half depth and it springs back: a press is
+ * an event, whereas engaged is a state that lasts as long as the modal does.
+ */
+.fret-rowaction:active {
+  background: var(--pressed);
+  box-shadow:
+    inset 0 2px 4px rgba(35, 33, 31, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.5);
+  color: var(--fg);
+}
+
+:root[data-theme='dark'] .fret-rowaction:active {
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.55),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/*
+ * Holding its confirmation. Green rather than the usual foreground, because
+ * this is the same thing the fields say when a change takes — one colour for
+ * "that worked", used everywhere it is true.
+ */
+.fret-rowaction--confirmed,
+.fret-rowaction--confirmed:hover {
+  color: var(--ok);
 }
 
 /*
