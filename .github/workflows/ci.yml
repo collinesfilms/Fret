@@ -5,6 +5,12 @@ on:
     branches: [main]
     tags: ['v*']
   pull_request:
+  # Lets a build be started by hand against a ref that is already pushed.
+  # A push authenticated with an app installation token raises no push event —
+  # GitHub suppresses it so a workflow cannot trigger itself — so a commit that
+  # arrives that way lands on main and never builds an image. This is how it
+  # gets one without an empty commit to bump the branch.
+  workflow_dispatch:
 
 permissions:
   contents: read
