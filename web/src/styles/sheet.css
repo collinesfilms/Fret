@@ -98,11 +98,30 @@
 
 .fret-sheet__body {
   flex: 1;
+  /*
+   * Both of these are load-bearing, and without them the list is not merely
+   * ugly — it is unreachable.
+   *
+   * min-height: 0 because a flex item's automatic minimum size is its content
+   * size: with flex: 1 alone this box refuses to shrink below its contents, so
+   * it never overflows itself and never scrolls.
+   *
+   * flex-shrink: 0 on the children because this box is itself a column flex
+   * container. Its children shrink by default, so a list too tall to fit was
+   * being squeezed rather than scrolled — and .fret-list clips its overflow to
+   * keep the row corners inside its radius, so the rows that got squeezed out
+   * simply vanished with no way to reach them.
+   */
+  min-height: 0;
   overflow-y: auto;
   padding: 20px 18px 24px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.fret-sheet__body > * {
+  flex-shrink: 0;
 }
 
 /*
@@ -819,12 +838,37 @@
 }
 
 /*
+ * The search field.
+ *
+ * These two declarations used to be an inline style, which meant the mobile
+ * type rules could not touch them: a media query loses to a style attribute
+ * every time. So the one field you are most likely to type into on a phone
+ * stayed at 9.5px while the drawer's fields were at 16 — the fields looked
+ * unrelated to each other, and this one still triggered iOS's zoom-on-focus.
+ */
+.fret-sheet__search {
+  border-radius: 11px;
+  font-size: 9.5px;
+}
+
+/*
  * The sheet's own mono type, lifted on a phone for the same reason as the
  * drawer's: these are the countdown, the size, the download count and the
  * four row actions — the whole reason anyone opens this list — and at 5.5px a
  * tile's unit is a smudge rather than a word.
  */
 @media (max-width: 640px) {
+  /* Same 16px floor as every other field, for the same reason. */
+  .fret-sheet__search {
+    font-size: 16px;
+  }
+
+  /* Nudged up with everything else, so the search field is not the largest
+     text on a screen whose whole job is the list beneath it. */
+  .fret-row__title {
+    font-size: 14.5px;
+  }
+
   .fret-row__meta,
   .fret-stat__label {
     font-size: 8.5px;

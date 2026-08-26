@@ -379,6 +379,13 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   padding: 7px 4px;
+  /*
+   * Stated rather than inherited, so the track is the same height wherever it
+   * appears. Left to the font's own metrics it came out a fraction taller in
+   * the drawer than in the sheet — half a pixel, invisible alone and obvious
+   * the moment two of them sit near each other.
+   */
+  line-height: 1.5;
   cursor: pointer;
   outline: none;
   transition: color var(--durFast) ease;

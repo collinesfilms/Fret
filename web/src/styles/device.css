@@ -193,6 +193,7 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--screenDim);
+  white-space: nowrap;
 }
 
 .fret-readout__right {
@@ -203,6 +204,7 @@
   text-transform: uppercase;
   color: var(--screenDim);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* ---------- file list on the screen ---------- */
@@ -479,6 +481,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /*
+   * A flex item will not shrink below its content without this, so the label
+   * pushed the key wider than its share of the row and then had its overflow
+   * cut off square by the key — "Waiting for u", mid-word, no ellipsis.
+   */
+  min-width: 0;
 }
 
 /*
@@ -492,7 +500,13 @@
  */
 .fret-morph {
   position: relative;
-  display: inline-block;
+  /* Block rather than inline-block: an inline-block sizes to its text and
+     hands the key a width it cannot honour, and text-overflow has nothing to
+     act on. As a block it fills the label and truncates inside it. */
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -564,6 +578,48 @@
 .fret-panel {
   position: relative;
   z-index: 2;
+}
+
+/*
+ * The device on a phone.
+ *
+ * Three keys abreast is a desktop row. At 393px the two fixed 88px keys and
+ * their gaps leave the primary about 130px for a label reading "Waiting for
+ * upload" — so it truncated, and truncating the one key that reports what the
+ * device is doing is the wrong thing to give up. It gets the full width and
+ * the other two share the row beneath, which also makes all three a
+ * comfortable size for a thumb.
+ *
+ * The readout drops its right-hand figure to its own line for the same
+ * reason: rate and time remaining cannot share 290px with a 34px number and
+ * its unit, and letting it wrap where it lands broke "3 MIN REMAINING" across
+ * two lines mid-phrase. Dropping it deliberately is a layout; wrapping is an
+ * accident.
+ */
+@media (max-width: 640px) {
+  .fret-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+  }
+
+  .fret-actions__primary {
+    grid-column: 1 / -1;
+  }
+
+  .fret-actions__secondary {
+    width: auto;
+  }
+
+  .fret-readout {
+    flex-wrap: wrap;
+    row-gap: 1px;
+  }
+
+  .fret-readout__right {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
 }
 
 /*

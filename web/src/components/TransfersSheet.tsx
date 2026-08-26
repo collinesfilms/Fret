@@ -249,11 +249,10 @@ export function TransfersSheet({
           </div>
 
           <input
-            className="fret-field"
+            className="fret-field fret-sheet__search"
             placeholder={t('sheet.search')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            style={{ borderRadius: 11, fontSize: 9.5 }}
             tabIndex={open ? 0 : -1}
           />
 
