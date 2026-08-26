@@ -6,12 +6,57 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 const DISMISS_AFTER = 70
 
 /**
- * The grab handle's behaviour, shared by every sheet that has one.
+ * How far a finger has to travel before this is a drag rather than a tap.
+ *
+ * Everything inside a sheet is now a place a drag can begin, so the gesture
+ * has to be told apart from a press on whatever it began on. Below this the
+ * sheet does not move and the button underneath still gets its click.
+ */
+const DRAG_SLOP = 8
+
+/**
+ * The scroller, if any, that owns a gesture starting on this element.
+ *
+ * Walks up to the sheet looking for something that can actually scroll — not
+ * merely something declared scrollable, since the sheet is full of containers
+ * that would scroll if their contents were longer and today are not. One that
+ * cannot scroll has no claim on the gesture.
+ */
+function ownedBy(target: Element | null, root: Element | null): Element | null {
+  let node: Element | null = target
+  while (node) {
+    if (node.scrollHeight > node.clientHeight + 1) {
+      const { overflowY } = getComputedStyle(node)
+      if (overflowY === 'auto' || overflowY === 'scroll') return node
+    }
+    // The root is checked and then stops the walk, rather than stopping it
+    // before being checked: the settings sheet is its own scroller, so
+    // excluding it would hand every gesture on it straight to the drag.
+    if (node === root) return null
+    node = node.parentElement
+  }
+  return null
+}
+
+/**
+ * Pushing a sheet back down, from anywhere on it.
  *
  * A surface that arrives from the bottom edge of a phone is expected to leave
- * the same way — by being pushed back down — and a handle you can only tap is
- * a handle that lied about what it was. Both sheets use this so the gesture
- * means the same thing wherever it appears.
+ * the same way, and on a phone that gesture is not aimed at a handle — you
+ * put a thumb on the sheet and push. The handle is still there, still taps to
+ * close, but it is a label for the gesture now rather than the only place to
+ * perform it.
+ *
+ * The whole difficulty is the list inside. A sheet you can drag anywhere and
+ * a list you can scroll are the same downward gesture, and only one of them
+ * can have it. The rule every native implementation of this settles on, and
+ * the one here: a scroller with anything above its top edge owns the gesture
+ * outright. Scroll it back to the top and the next pull is the sheet's.
+ *
+ * Which is why the scroller is asked for its position at the moment the
+ * gesture turns into a drag rather than when the finger landed — a fling that
+ * is still gliding to a stop is a list that is still scrolling, and it should
+ * keep the pull that arrives on top of it.
  *
  * The drag is applied as an inline transform with the transition suppressed,
  * because a sheet following a thumb must not ease: easing would put the
@@ -19,39 +64,74 @@ const DISMISS_AFTER = 70
  */
 export function useGrabToDismiss(open: boolean, onClose: () => void) {
   const [grabY, setGrabY] = useState(0)
-  const dragging = useRef(false)
-  const from = useRef(0)
+  const gesture = useRef<{
+    id: number
+    y: number
+    x: number
+    scroller: Element | null
+    dragging: boolean
+  } | null>(null)
+  /* Read on pointerup, which is a frame or two after the last move and by
+     then would be looking at a stale render's value. */
+  const travelled = useRef(0)
 
   useEffect(() => {
     if (!open) setGrabY(0)
   }, [open])
 
-  const handlers = {
+  const end = () => {
+    const current = gesture.current
+    gesture.current = null
+    if (!current?.dragging) return
+    const far = travelled.current > DISMISS_AFTER
+    travelled.current = 0
+    setGrabY(0)
+    if (far) onClose()
+  }
+
+  const grabHandlers = {
     onPointerDown: (event: React.PointerEvent) => {
-      dragging.current = true
-      from.current = event.clientY
-      event.currentTarget.setPointerCapture(event.pointerId)
+      if (event.pointerType === 'mouse' && event.button !== 0) return
+      gesture.current = {
+        id: event.pointerId,
+        y: event.clientY,
+        x: event.clientX,
+        scroller: ownedBy(event.target as Element, event.currentTarget as Element),
+        dragging: false,
+      }
     },
     onPointerMove: (event: React.PointerEvent) => {
-      if (!dragging.current) return
-      // Downward only: a sheet cannot be pulled past the top of its travel.
-      const delta = Math.max(0, event.clientY - from.current)
-      if (delta > 2) setGrabY(delta)
+      const current = gesture.current
+      if (!current || current.id !== event.pointerId) return
+      const dy = event.clientY - current.y
+
+      if (!current.dragging) {
+        // Downward, and more downward than sideways. Anything else is a tap,
+        // a swipe across, or the start of a scroll, and none of them is this.
+        if (dy < DRAG_SLOP || Math.abs(event.clientX - current.x) > dy) return
+        if (current.scroller && current.scroller.scrollTop > 0) {
+          gesture.current = null
+          return
+        }
+        current.dragging = true
+        // Only now: capturing on pointerdown would take the gesture away from
+        // the list before anyone knew which of the two it belonged to.
+        ;(event.currentTarget as Element).setPointerCapture(event.pointerId)
+      }
+
+      // Measured from where the drag began, not from where the finger landed,
+      // so the sheet does not jump the slop distance on its first frame.
+      travelled.current = Math.max(0, dy - DRAG_SLOP)
+      setGrabY(travelled.current)
     },
-    onPointerUp: () => {
-      if (!dragging.current) return
-      dragging.current = false
-      const far = grabY > DISMISS_AFTER
-      setGrabY(0)
-      // A tap on the handle closes too, which is what a thumb expects.
-      if (far || grabY === 0) onClose()
-    },
+    onPointerUp: end,
+    onPointerCancel: end,
   }
 
   return {
     grabY,
-    /** Spread onto the handle. */
-    grabHandlers: { ...handlers, onPointerCancel: handlers.onPointerUp },
+    /** Spread onto the sheet itself: the whole surface is the handle. */
+    grabHandlers,
     /** Spread onto the sheet, so it tracks the finger without easing. */
     grabStyle:
       grabY > 0 ? { transform: `translateY(${grabY}px)`, transition: 'none' } : undefined,

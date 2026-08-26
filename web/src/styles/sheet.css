@@ -90,11 +90,16 @@
 }
 
 @media (max-width: 640px) {
+  /* A button now, since tapping it is all it does on its own — the drag it
+     used to own belongs to the whole sheet. */
   .fret-sheet__grab {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
     padding: 10px 0 6px;
+    background: none;
+    border: none;
     cursor: grab;
     touch-action: none;
     flex-shrink: 0;
@@ -126,6 +131,9 @@
    */
   min-height: 0;
   overflow-y: auto;
+  /* A pull that reaches the top of this list belongs to the sheet, so nothing
+     here may rubber-band or hand the rest of it upwards. */
+  overscroll-behavior: contain;
   padding: 20px 18px 24px;
   display: flex;
   flex-direction: column;
@@ -656,7 +664,14 @@
 .fret-modal {
   position: fixed;
   z-index: 70;
-  top: 50%;
+  /*
+   * Centred on what can be seen, not on the window. Fixed positioning is
+   * relative to the layout viewport, which on iOS keeps its full height with
+   * the keyboard up — so half of "centred" can be behind the keyboard. App.tsx
+   * publishes the visible region; the fallback is right everywhere a keyboard
+   * is not covering anything.
+   */
+  top: calc(var(--fret-vvTop, 0px) + var(--fret-vvH, 100dvh) / 2);
   left: 50%;
   transform: translate(-50%, -50%);
   transition: left var(--durSheet) var(--easeOut);
@@ -678,23 +693,34 @@
   border-radius: 18px;
   box-shadow: var(--modalShadow);
   animation: fretModalIn var(--durBase) var(--easeSnap) both;
-  max-height: calc(100dvh - 48px);
+  max-height: calc(var(--fret-vvH, 100dvh) - 48px);
   display: flex;
   flex-direction: column;
 }
 
+/*
+ * Modals stay modals on a phone.
+ *
+ * They used to become bottom sheets here, on the reasoning that a form with
+ * fields should arrive from the edge the keyboard arrives from. In practice
+ * it put them exactly where the sheet they were opened from already was, and
+ * the transfers sheet does not go anywhere while one is open — so a dialog
+ * slid up over a sheet read as the same surface changing its mind rather than
+ * as something new interrupting. Held in the middle of the screen there is no
+ * ambiguity about which of the two you are being asked to answer.
+ *
+ * They still narrow: the width below is a fraction of the screen with a
+ * ceiling, not a fixed 376px, and the height is capped at the dynamic
+ * viewport so a keyboard cannot push the buttons off the bottom.
+ */
 @media (max-width: 640px) {
   .fret-modal,
   .fret-modal--beside-sheet {
-    top: auto;
-    bottom: 0;
-    left: 0;
-    transform: none;
-    width: 100%;
-    max-width: none;
-    border-radius: 20px 20px 0 0;
-    animation: fretSheetUp var(--durBase) var(--easeOut) both;
-    max-height: 88dvh;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100% - 32px);
+    max-width: 400px;
+    max-height: calc(var(--fret-vvH, 100dvh) - 32px);
   }
 }
 
@@ -727,6 +753,7 @@
   flex-direction: column;
   gap: 14px;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .fret-modal__field label {
@@ -841,46 +868,21 @@
     margin-bottom: 5px;
   }
 
+  /* No safe-area inset any more: this floats in the middle of the screen
+     rather than sitting against the bottom edge. */
   .fret-modal__foot {
     padding: 11px 14px;
-    padding-bottom: max(14px, env(safe-area-inset-bottom));
   }
 
   .fret-modal__foot .fret-key {
     padding: 12px 14px;
   }
 
-  /*
-   * The confirmation stays a modal here, alone among them.
-   *
-   * Every other modal becomes a bottom sheet on a phone because it is a place
-   * you work: a form with fields, arriving from the edge the keyboard will
-   * arrive from, big enough to hold both. This one is a question with two
-   * answers and nothing to type. Sliding it up from the bottom puts it
-   * exactly where the sheet it was opened from already is, under the thumb
-   * that was scrolling a second ago — and the destructive answer lands there.
-   * Held in the middle of the screen it reads as what it is: something that
-   * has interrupted you and wants an answer before anything else happens.
-   *
-   * It has to restate the centring because the block above sets every modal
-   * flat against the bottom edge, and the safe-area padding for the same
-   * reason — a floating dialog is nowhere near the home indicator.
-   */
+  /* A question with two answers wants less room than a form with three
+     fields, so the confirmation keeps its narrower width here too. */
   .fret-modal--ask,
   .fret-modal--ask.fret-modal--beside-sheet {
-    top: 50%;
-    bottom: auto;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: min(340px, calc(100% - 40px));
-    max-width: none;
-    border-radius: 18px;
-    animation: fretModalIn var(--durBase) var(--easeSnap) both;
-    max-height: calc(100dvh - 48px);
-  }
-
-  .fret-modal--ask .fret-modal__foot {
-    padding-bottom: 11px;
+    max-width: 340px;
   }
 }
 

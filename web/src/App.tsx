@@ -108,7 +108,59 @@ export function App() {
     } catch {
       // Private browsing refuses storage; the theme still applies this session.
     }
+
+    /*
+     * Tell the browser what colour its own furniture should be.
+     *
+     * Left to itself Safari samples the page and lands near the background
+     * rather than on it, which on a phone drew a seam across the top of the
+     * screen and another under it — the status bar and the toolbar each a
+     * slightly different grey from the app between them. It cannot be a
+     * static tag in the head, because the theme here is a stored preference
+     * that changes without a reload, so the value is read back out of the
+     * palette that is actually in force.
+     */
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+    if (meta) {
+      const background = getComputedStyle(document.documentElement)
+        .getPropertyValue('--bg')
+        .trim()
+      if (background) meta.content = background
+    }
   }, [resolvedTheme])
+
+  /*
+   * The part of the screen that is actually visible, published as two custom
+   * properties.
+   *
+   * A modal is `position: fixed`, which on iOS means fixed to the layout
+   * viewport — and the layout viewport does not shrink when the keyboard
+   * comes up. So a dialog centred the obvious way is centred on a screen half
+   * of which is behind the keyboard, and the editor's buttons end up under
+   * it. The visual viewport is the one that knows, so the modal is centred on
+   * that instead. offsetTop matters as much as the height: Safari also slides
+   * the visible region up to follow a focused field, and a modal that ignored
+   * that would drift as you typed.
+   *
+   * Everything falls back to the dynamic viewport height, which is right on
+   * every browser without a keyboard in the way.
+   */
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return
+    const publish = () => {
+      const style = document.documentElement.style
+      style.setProperty('--fret-vvH', `${viewport.height}px`)
+      style.setProperty('--fret-vvTop', `${viewport.offsetTop}px`)
+    }
+    publish()
+    viewport.addEventListener('resize', publish)
+    viewport.addEventListener('scroll', publish)
+    return () => {
+      viewport.removeEventListener('resize', publish)
+      viewport.removeEventListener('scroll', publish)
+    }
+  }, [])
 
   useEffect(() => {
     const name = me?.appName ?? config?.appName

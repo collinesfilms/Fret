@@ -81,6 +81,10 @@ const en = {
   'action.edit': 'EDIT',
   'action.open': 'OPEN',
   'action.delete': 'DELETE',
+  /* Every surface that can be dismissed carries one of these somewhere, and
+     none of them is a word anybody sees — they are what a screen reader
+     announces for a control whose whole job is a shape. */
+  'action.close': 'Close',
 
   'edit.title': 'Edit transfer',
   'edit.save': 'Save changes',
@@ -212,6 +216,7 @@ const fr: Record<StringKey, string> = {
   'action.edit': 'MODIFIER',
   'action.open': 'VOIR',
   'action.delete': 'SUPPRIMER',
+  'action.close': 'Fermer',
 
   'edit.title': 'Modifier le transfert',
   'edit.save': 'Enregistrer',

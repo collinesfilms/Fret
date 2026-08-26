@@ -471,6 +471,7 @@
     width: auto;
     max-height: 82dvh;
     overflow-y: auto;
+    overscroll-behavior: contain;
     border-radius: 20px 20px 0 0;
     border-bottom: none;
     /* The last control sits on the edge of the screen otherwise, where the
@@ -492,10 +493,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
     padding: 10px 0 6px;
     position: sticky;
     top: 0;
     background: var(--body);
+    border: none;
     z-index: 1;
     cursor: grab;
     touch-action: none;

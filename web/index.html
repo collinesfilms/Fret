@@ -2,8 +2,27 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!--
+      maximum-scale=1 is here for one reason: iOS Safari zooms the page in
+      whenever you focus an input whose type is under 16px, and does not zoom
+      back out afterwards. Fret's fields are at --m5, deliberately, because a
+      16px field beside 7.5px labels is the loudest thing on the screen and it
+      is not the point. Safari has ignored this hint for pinch since iOS 10,
+      so a closer look is still a closer look — it only declines the
+      uninvited one.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+    />
     <meta name="color-scheme" content="light dark" />
+    <!--
+      Rewritten from the resolved palette on every theme change (App.tsx).
+      Without it Safari tints its own bars by sampling the page and lands on
+      something close to but not the background, which is what put a seam
+      across the top and bottom of the screen on a phone.
+    -->
+    <meta name="theme-color" content="#f0eeea" />
     <title>Fret</title>
 
     <!--

@@ -354,11 +354,10 @@ export function Scroller({
  * How long an exchange is held open: both lines split into characters, the
  * mode on the box, and the outgoing line still in the DOM.
  *
- * It has to outlast the last thing that moves, and which thing that is
- * depends on the direction — a grow leads with --durSettle and then runs the
- * exchange, a shrink runs the exchange and then spends --durSettle closing
- * up. Either way it is one settle plus one exchange; only a label that has
- * not changed width does without.
+ * It has to outlast the last thing that moves. A grow lets the lamp set off
+ * half a settle ahead and then runs the exchange over the top of it; a shrink
+ * runs the exchange and closes the box up inside it, finishing sooner. So the
+ * long case is the grow, and only when there is a lamp to lead with.
  *
  * Timing this to the outgoing line alone was wrong, and wrong in a way that
  * looked like a rendering bug rather than a duration: the split is what
@@ -366,14 +365,16 @@ export function Scroller({
  * had gone put the rest of the new one on screen in a single frame. The word
  * wrote three letters and then simply appeared.
  *
- * The numbers are the durations in tokens.css — --durSettle, --durCascade
- * twice, --durPress, --durFast — plus a frame or two so the last character is
- * never cut off by a re-render landing as it finishes.
+ * The numbers are the durations in tokens.css — --durCascade twice,
+ * --durPress, --durFast, and half a --durSettle for the lead — plus a frame
+ * or two so the last character is never cut off by a re-render landing as it
+ * finishes.
  */
-const EXCHANGE_MS = 110 + 120 + 110 + 180
+const EXCHANGE_MS = 90 + 120 + 90 + 180
+const LEAD_MS = 80
 
 function morphMs(mode: Exchange, lamp: boolean | undefined): number {
-  return (lamp && mode !== 'level' ? 200 : 0) + EXCHANGE_MS + 60
+  return (lamp && mode === 'grow' ? LEAD_MS : 0) + EXCHANGE_MS + 60
 }
 
 /**
@@ -541,13 +542,24 @@ function useLabelBox(line: string, sizer: RefObject<HTMLElement | null>) {
   const [box, setBox] = useState<{ width: number; mode: Exchange }>({ width: 0, mode: 'level' })
 
   const measure = useCallback(() => {
-    // Rounded up, not down. A rect is fractional and offsetWidth is not, so a
-    // line that wants 129.06px measures at 129 and is then handed a 129px box
-    // — which it overflows by six hundredths of a pixel, and text-overflow
-    // does not care how little: the key draws an ellipsis beside a label that
-    // fits.
-    const width = Math.ceil(sizer.current?.getBoundingClientRect().width ?? 0)
-    if (width === 0) return
+    /*
+     * offsetWidth, and one pixel over it.
+     *
+     * A rect would be the obvious thing to measure and it is the wrong one:
+     * it reports the painted box, so an ancestor mid-animation is folded into
+     * the answer. Every modal in the app arrives at scale(0.96), which had a
+     * key inside one measuring four percent narrow and keeping it — "No
+     * changes" locked into a box built for "No chan…". offsetWidth is layout
+     * and has no opinion about transforms.
+     *
+     * The pixel is for its rounding. offsetWidth is an integer, so a line
+     * that wants 129.4px reports 129, and text-overflow does not care that it
+     * is four tenths short: the key draws an ellipsis beside a label that
+     * fits. One over is always enough and never enough to see.
+     */
+    const node = sizer.current
+    const width = node ? node.offsetWidth + 1 : 0
+    if (width <= 1) return
     setBox((previous) => {
       const mode: Exchange =
         previous.width === 0 || previous.width === width

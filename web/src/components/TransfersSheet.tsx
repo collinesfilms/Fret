@@ -175,21 +175,21 @@ export function TransfersSheet({
         onClick={onClose}
         aria-hidden="true"
       />
+      {/* The gesture is on the whole surface, not on the bar: a thumb pushing
+          a sheet back down does not aim at anything. */}
       <aside
         className={`fret-sheet${open ? ' fret-sheet--open' : ''}`}
         style={grabStyle}
+        {...grabHandlers}
         aria-hidden={!open}
         aria-label={t('sheet.title')}
       >
-        <div
+        <button
+          type="button"
           className="fret-sheet__grab"
-          {...grabHandlers}
-          role="button"
           tabIndex={open ? 0 : -1}
-          aria-label={t('sheet.title')}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') onClose()
-          }}
+          aria-label={t('action.close')}
+          onClick={onClose}
         />
 
         <div className="fret-sheet__body">
@@ -207,7 +207,7 @@ export function TransfersSheet({
               type="button"
               className="fret-close"
               onClick={onClose}
-              aria-label="Close"
+              aria-label={t('action.close')}
               tabIndex={open ? 0 : -1}
             >
               ×

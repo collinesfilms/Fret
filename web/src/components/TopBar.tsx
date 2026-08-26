@@ -214,6 +214,7 @@ function SettingsPopover({
     <div
       className={`fret-popover${open ? ' fret-popover--open' : ''}`}
       style={grabStyle}
+      {...grabHandlers}
       inert={!open}
       aria-hidden={!open}
     >
@@ -223,7 +224,12 @@ function SettingsPopover({
         arrive the same way and a thumb should not have to learn two
         vocabularies for it.
       */}
-      <div className="fret-popover__grab" {...grabHandlers} />
+      <button
+        type="button"
+        className="fret-popover__grab"
+        aria-label={t('action.close')}
+        onClick={onClose}
+      />
 
       <div className="fret-popover__stack">
         <div className="fret-popover__stackLabel">{t('prefs.theme')}</div>

@@ -158,16 +158,9 @@
    * Leaving is --durPress a character, arriving is --durFast: a thing leaving
    * is faster than the same thing arriving, here as everywhere else.
    */
-  --durCascade: 0.11s;
-  --durSettle: 0.2s;
+  --durCascade: 0.09s;
+  --durSettle: 0.16s;
 
-  /*
-   * One whole exchange, first character of the old line to last of the new.
-   * Derived rather than declared, so it cannot drift out of agreement with
-   * the four durations it is made of — device.css waits exactly this long
-   * before letting the box shrink.
-   */
-  --durExchange: calc(2 * var(--durCascade) + var(--durPress) + var(--durFast));
 }
 
 :root[data-theme='dark'] {

@@ -23,9 +23,23 @@
   max-width: 512px;
 }
 
-/* Played once, when an upload lands. */
+/*
+ * Played once, when an upload lands.
+ *
+ * The entry animation is restated here rather than replaced, and that is the
+ * whole point of the declaration. An element's animations are matched to the
+ * previous list by position, so a name that keeps its index keeps running
+ * where it was; replacing the list with `fretSettle` alone dropped fretIn out
+ * of index 0, and putting it back when the class came off started it again —
+ * the device replayed its arrival, an 8px rise, a full second after landing
+ * and a quarter of a second after the settle had finished. Two movements
+ * where there should have been one, close enough together to read as a
+ * flicker rather than as anything deliberate.
+ */
 .fret-panel--settled {
-  animation: fretSettle var(--durBeat) var(--easeOut) both;
+  animation:
+    fretIn var(--durPanel) var(--easeOut) both,
+    fretSettle var(--durBeat) var(--easeOut) both;
 }
 
 .fret-lamp--bloom {
@@ -543,16 +557,16 @@
    * that is still on screen, and which side it would cross depends on which
    * way the label is going:
    *
-   *   growing — the lamp moves out first, into space the short old line was
-   *             never using, and the exchange follows it into the room it
-   *             made. So the box widens at once and the cascade waits one
-   *             --durSettle (--fret-morph-lead, below).
+   *   growing — the lamp moves out into space the short old line was never
+   *             using, so it crosses nothing; the cascade only has to start
+   *             late enough not to write into the room the lamp is still
+   *             leaving (--fret-morph-lead, below).
    *
    *   shrinking — the space the lamp wants is space the long old line is
-   *             still standing in. So the exchange goes first and the box
-   *             waits a whole --durExchange before closing up
-   *             (--fret-morph-hold), by which time there is nothing left for
-   *             the lamp to walk through.
+   *             still standing in, so the box holds until that line has gone
+   *             and no longer (--fret-morph-hold). The incoming line is
+   *             centred and never reaches as far left as the lamp is coming
+   *             from, so there is nothing to wait for after that.
    *
    * A label that changes without changing width holds still and just fades.
    */
@@ -566,13 +580,30 @@
  * is centred on a centre that does not move, so the width can change whenever
  * it likes and the sequencing would buy nothing — it would only spend a
  * --durSettle doing nothing before a confirmation the finger is waiting on.
+ *
+ * The two overlap rather than queue. Strictly one-then-the-other was correct
+ * and read as slow: two complete movements end to end, and you watch the
+ * first finish before the second is allowed to begin. What the rule actually
+ * requires is only that the lamp never crosses text that is still there, and
+ * neither of these delays has to wait for a whole movement to satisfy it.
+ *
+ * Going longer, the lamp is travelling away from the text into space nothing
+ * is using, so it never crosses anything at all — the exchange only has to
+ * start late enough not to be writing into the space the lamp is still
+ * leaving. Half a settle is plenty, and the two run together for the rest.
+ *
+ * Going shorter, the space the lamp wants is where the outgoing line stands,
+ * so it has to wait for that line and only that line — not for the incoming
+ * one, which is centred and never reaches as far left as the lamp is coming
+ * from. It sets off as the last character of the old line goes, and closes up
+ * while the new one is still writing.
  */
 .fret-morph--lamp.fret-morph--grow {
-  --fret-morph-lead: var(--durSettle);
+  --fret-morph-lead: calc(var(--durSettle) / 2);
 }
 
 .fret-morph--lamp.fret-morph--shrink {
-  --fret-morph-hold: var(--durExchange);
+  --fret-morph-hold: calc(var(--durCascade) + var(--durPress));
 }
 
 /*
