@@ -86,7 +86,11 @@ const en = {
   'edit.save': 'Save changes',
   'edit.noChanges': 'No changes',
   'edit.delete': 'Delete',
-  'edit.confirmDelete': 'Delete for good?',
+
+  'delete.title': 'Delete this transfer?',
+  'delete.note': 'The link stops working and the files are removed from storage. This cannot be undone.',
+  'delete.keep': 'Keep it',
+  'delete.confirm': 'Delete',
 
   'prefs.theme': 'THEME',
   'prefs.slug': 'LINK STYLE',
@@ -213,7 +217,11 @@ const fr: Record<StringKey, string> = {
   'edit.save': 'Enregistrer',
   'edit.noChanges': 'Aucun changement',
   'edit.delete': 'Supprimer',
-  'edit.confirmDelete': 'Supprimer définitivement ?',
+
+  'delete.title': 'Supprimer ce transfert ?',
+  'delete.note': "Le lien cessera de fonctionner et les fichiers seront retirés du stockage. C'est irréversible.",
+  'delete.keep': 'Conserver',
+  'delete.confirm': 'Supprimer',
 
   'prefs.theme': 'THÈME',
   'prefs.slug': 'STYLE DE LIEN',

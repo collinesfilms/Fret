@@ -339,17 +339,34 @@
  */
 .fret-tile__lock {
   position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 18px;
-  height: 18px;
+  top: -5px;
+  right: -5px;
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
   background: var(--body);
   border: 1px solid var(--edge);
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding-bottom: 3.5px;
+  padding-bottom: 3px;
+}
+
+/*
+ * The drawing inside came down with the badge. Enlarging the ring last time
+ * gave the shackle room but left the padlock itself as heavy as before, so
+ * the badge still read as full — the lock had to shrink, not its container.
+ */
+.fret-tile__lock .fret-lock {
+  width: 6px;
+  height: 4.5px;
+  border-radius: 1.2px;
+}
+
+.fret-tile__lock .fret-lock::before {
+  width: 3.6px;
+  height: 3.4px;
+  border-radius: 2px 2px 0 0;
 }
 
 .fret-lock {
@@ -737,6 +754,68 @@
 }
 
 /*
+ * The delete confirmation.
+ *
+ * Narrower than the editor and with nothing in it but the question, the thing
+ * being destroyed, and the two answers. It names the transfer because "this
+ * transfer" could be any of them.
+ */
+.fret-modal--ask {
+  width: min(340px, calc(100% - 40px));
+}
+
+.fret-ask__title {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  color: var(--fg);
+}
+
+.fret-ask__subject {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--sunk);
+  border: 1px solid var(--edge);
+  border-radius: 11px;
+  padding: 10px 12px;
+  min-width: 0;
+}
+
+.fret-ask__name {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.018em;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fret-ask__meta {
+  font-family: var(--mono);
+  font-size: 7.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--fg3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The consequence, in words, before the button that causes it. */
+.fret-ask__note {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--fg2);
+}
+
+/* Keeping it is the safe answer, so it is the plain key and it comes first. */
+.fret-modal--ask .fret-modal__foot .fret-ask__keep {
+  flex: 1;
+}
+
+/*
  * The modal, tightened for a phone.
  *
  * These come after the rules they override rather than beside the layout
@@ -778,6 +857,20 @@
   .fret-modal__foot .fret-key {
     font-size: 13px;
     padding: 12px 14px;
+  }
+
+  /*
+   * The confirmation is a bottom sheet here like every other modal. Its
+   * desktop width is declared after the block that makes modals full-width on
+   * a phone, so without this it kept its 340px and sat in the corner.
+   */
+  .fret-modal--ask {
+    width: 100%;
+    max-width: none;
+  }
+
+  .fret-ask__note {
+    font-size: 12px;
   }
 }
 
@@ -910,9 +1003,9 @@
  * tile's unit is a smudge rather than a word.
  */
 @media (max-width: 640px) {
-  /* Same 16px floor as every other field, for the same reason. */
+  /* Sized with the other fields, for the reason given beside them. */
   .fret-sheet__search {
-    font-size: 16px;
+    font-size: 10.5px;
     padding: 10px 12px;
   }
 

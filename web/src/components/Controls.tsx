@@ -1,6 +1,62 @@
 /** Flat controls: fields, the segmented control, and the settings row layout. */
 
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+
+/** Past this many pixels of downward drag, a bottom sheet dismisses. */
+const DISMISS_AFTER = 70
+
+/**
+ * The grab handle's behaviour, shared by every sheet that has one.
+ *
+ * A surface that arrives from the bottom edge of a phone is expected to leave
+ * the same way — by being pushed back down — and a handle you can only tap is
+ * a handle that lied about what it was. Both sheets use this so the gesture
+ * means the same thing wherever it appears.
+ *
+ * The drag is applied as an inline transform with the transition suppressed,
+ * because a sheet following a thumb must not ease: easing would put the
+ * surface a few pixels behind the finger holding it.
+ */
+export function useGrabToDismiss(open: boolean, onClose: () => void) {
+  const [grabY, setGrabY] = useState(0)
+  const dragging = useRef(false)
+  const from = useRef(0)
+
+  useEffect(() => {
+    if (!open) setGrabY(0)
+  }, [open])
+
+  const handlers = {
+    onPointerDown: (event: React.PointerEvent) => {
+      dragging.current = true
+      from.current = event.clientY
+      event.currentTarget.setPointerCapture(event.pointerId)
+    },
+    onPointerMove: (event: React.PointerEvent) => {
+      if (!dragging.current) return
+      // Downward only: a sheet cannot be pulled past the top of its travel.
+      const delta = Math.max(0, event.clientY - from.current)
+      if (delta > 2) setGrabY(delta)
+    },
+    onPointerUp: () => {
+      if (!dragging.current) return
+      dragging.current = false
+      const far = grabY > DISMISS_AFTER
+      setGrabY(0)
+      // A tap on the handle closes too, which is what a thumb expects.
+      if (far || grabY === 0) onClose()
+    },
+  }
+
+  return {
+    grabY,
+    /** Spread onto the handle. */
+    grabHandlers: { ...handlers, onPointerCancel: handlers.onPointerUp },
+    /** Spread onto the sheet, so it tracks the finger without easing. */
+    grabStyle:
+      grabY > 0 ? { transform: `translateY(${grabY}px)`, transition: 'none' } : undefined,
+  }
+}
 
 export function SettingsRow({
   label,

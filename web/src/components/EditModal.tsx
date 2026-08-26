@@ -18,25 +18,19 @@ interface EditModalProps {
   locale: Locale
   /** True while the transfers sheet is open beside it, on desktop. */
   besideSheet?: boolean
-  /**
-   * Opened from the row's Delete rather than its Edit, so the confirmation is
-   * already showing — otherwise pressing Delete would land you on a form with
-   * no sign of what you asked for.
-   */
-  armDelete?: boolean
   onClose: () => void
   onSaved: () => void
-  onDeleted: () => void
+  /** Hands over to the delete confirmation, which is its own surface. */
+  onDelete: () => void
 }
 
 export function EditModal({
   transfer,
   locale,
   besideSheet,
-  armDelete,
   onClose,
   onSaved,
-  onDeleted,
+  onDelete,
 }: EditModalProps) {
   const [slug, setSlug] = useState(transfer.slug)
   // A stored password is never sent back, so the field starts empty and only
@@ -47,7 +41,6 @@ export function EditModal({
   const [error, setError] = useState<string | null>(null)
   const [slugError, setSlugError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(Boolean(armDelete))
   const firstField = useRef<HTMLInputElement>(null)
 
   const t = (key: StringKey, vars?: Record<string, string | number>) =>
@@ -89,23 +82,6 @@ export function EditModal({
         setError(err instanceof Error ? err.message : t('error.generic'))
       }
     } finally {
-      setSaving(false)
-    }
-  }
-
-  const remove = async () => {
-    if (!confirmDelete) {
-      // Deleting a live link is not undoable, so it asks once.
-      setConfirmDelete(true)
-      return
-    }
-    setSaving(true)
-    try {
-      await api.deleteTransfer(transfer.id)
-      onDeleted()
-      onClose()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('error.generic'))
       setSaving(false)
     }
   }
@@ -223,18 +199,12 @@ export function EditModal({
             <Morph>{dirty ? t('edit.save') : t('edit.noChanges')}</Morph>
           </Key>
           {/*
-            Delete arming itself is the one place in the modal where a control
-            changes what it will do, so it says so twice: the label is
-            replaced rather than rewritten, and the button takes the accent
-            ground it has been threatening all along.
+            Hands off to its own dialog rather than arming itself here. A
+            control that changes what it will do on the second press is a fine
+            thing for something recoverable; this is not that.
           */}
-          <button
-            type="button"
-            className={`fret-delete${confirmDelete ? ' fret-delete--armed' : ''}`}
-            onClick={remove}
-            disabled={saving}
-          >
-            <Morph>{confirmDelete ? t('edit.confirmDelete') : t('edit.delete')}</Morph>
+          <button type="button" className="fret-delete" onClick={onDelete} disabled={saving}>
+            {t('edit.delete')}
           </button>
         </div>
       </div>

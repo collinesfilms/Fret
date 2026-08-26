@@ -259,25 +259,6 @@
   appearance: none;
 }
 
-/*
- * iOS Safari zooms the whole page in whenever a field it is focusing is set
- * below 16px, and does not zoom back out when the field is left. Every mono
- * field here is 10.5px, so on a phone every tap on the link or the password
- * left the device blown up and off-centre — which is what "the zoom is wrong"
- * turns out to mean. There is no way to opt out of the behaviour short of
- * disabling pinch-zoom for everybody, so the field meets it at its number.
- *
- * It reads well at this size anyway: the drawer's fields hold a slug and a
- * password, which are the two things on a phone you most want to be able to
- * check without leaning in.
- */
-@media (max-width: 640px) {
-  .fret-field {
-    font-size: 16px;
-    letter-spacing: 0.01em;
-  }
-}
-
 .fret-field:focus {
   outline: none;
   border-color: var(--fg3);
@@ -413,6 +394,13 @@
 
 /* ---------- popover ---------- */
 
+/*
+ * Always in the DOM, shown by a class.
+ *
+ * It used to be mounted only while open, which gave it an entrance and no
+ * exit: on a phone it slid up from the bottom edge and then vanished
+ * mid-air. Transitions need both ends of the journey to exist.
+ */
 .fret-popover {
   position: absolute;
   top: calc(100% + 8px);
@@ -424,13 +412,28 @@
   border-radius: 14px;
   box-shadow: var(--lift);
   padding: 14px;
-  animation: fretPop var(--durFast) var(--easeOut) both;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px) scale(0.985);
+  transform-origin: top right;
+  transition: opacity var(--durFast) ease, transform var(--durFast) var(--easeOut);
+}
+
+.fret-popover--open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
 }
 
 /* Desktop: neither of these exists. The popover hangs off its button. */
 .fret-popover__scrim,
 .fret-popover__grab {
   display: none;
+}
+
+/* Nothing to dismiss into on a desktop, so the scrim never shows there. */
+.fret-popover__scrim--on {
+  opacity: 1;
 }
 
 /*
@@ -449,9 +452,19 @@
     inset: 0;
     z-index: 39;
     background: var(--scrim);
-    animation: fretFade var(--durFast) ease both;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--durFast) ease;
   }
 
+  .fret-popover__scrim--on {
+    pointer-events: auto;
+  }
+
+  /*
+   * The same travel as the transfers sheet: in from the bottom edge, out the
+   * same way. Not an animation — a transition, so the exit exists too.
+   */
   .fret-popover {
     position: fixed;
     inset: auto 0 0 0;
@@ -464,10 +477,17 @@
        home indicator lives and where a thumb rests. */
     padding: 0 16px calc(34px + env(safe-area-inset-bottom, 0px));
     box-shadow: var(--shUp);
-    animation: fretSheetUp var(--durSheet) var(--easeOut) both;
+    opacity: 1;
+    transform: translateY(102%);
+    transition: transform var(--durSheet) var(--easeOut);
   }
 
-  /* The transfers sheet's handle, at the same size and in the same place. */
+  .fret-popover--open {
+    transform: none;
+  }
+
+  /* The transfers sheet's handle, at the same size and in the same place, and
+     now with the same gesture attached to it. */
   .fret-popover__grab {
     display: flex;
     align-items: center;
@@ -477,6 +497,8 @@
     top: 0;
     background: var(--body);
     z-index: 1;
+    cursor: grab;
+    touch-action: none;
   }
 
   .fret-popover__grab::before {
@@ -944,10 +966,20 @@
   }
 
   /*
-   * The field keeps its 16px, but stops looking like a text box on a form:
-   * tighter, with the value sitting closer to the label beside it.
+   * Sized with the rest of the interface rather than against iOS.
+   *
+   * These sat at 16px because Safari zooms the page when you focus anything
+   * smaller and never zooms back. But 16px mono beside 8px labels made the
+   * fields the loudest thing on a screen full of small, tidy controls, and
+   * the fields are not the point — the link is, and the slug in it is eight
+   * characters. The zoom is a nuisance you can pinch out of; a permanently
+   * out-of-scale interface is one you look at every time.
+   *
+   * If the focus zoom turns out to be worse than the mismatch, this number is
+   * the whole fix: put it back to 16px.
    */
   .fret-field {
+    font-size: 11px;
     padding: 9px 11px;
     border-radius: 9px;
   }

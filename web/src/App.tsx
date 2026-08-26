@@ -7,6 +7,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { DeleteModal } from './components/DeleteModal'
 import { EditModal } from './components/EditModal'
 import { TopBar } from './components/TopBar'
 import { TransfersSheet, type EngagedAction } from './components/TransfersSheet'
@@ -25,6 +26,7 @@ export function App() {
   const [storageUsed, setStorageUsed] = useState(0)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<TransferSummary | null>(null)
+  const [deleting, setDeleting] = useState<TransferSummary | null>(null)
   // Which row action opened the modal, so that cell can stay visibly pressed.
   const [engaged, setEngaged] = useState<EngagedAction | null>(null)
   /*
@@ -242,17 +244,40 @@ export function App() {
         onCopy={copyLink}
         onEdit={(transfer) => openEditor(transfer, 'edit')}
         onOpen={openRecipient}
-        onDelete={(transfer) => openEditor(transfer, 'delete')}
+        onDelete={(transfer) => {
+          setEngaged({ id: transfer.id, action: 'delete' })
+          setDeleting(transfer)
+        }}
       />
 
+      {/*
+        Editing and deleting are separate surfaces. Delete used to open the
+        editor with its own delete already armed, which meant arriving on a
+        form you had not asked for, under a title that said "Edit transfer",
+        with one control mid-gesture.
+      */}
       {editing && (
         <EditModal
           transfer={editing}
           locale={locale}
           besideSheet={sheetOpen && !narrow}
-          armDelete={engaged?.action === 'delete'}
           onClose={closeEditor}
           onSaved={refreshTransfers}
+          onDelete={() => {
+            setEditing(null)
+            setDeleting(editing)
+          }}
+        />
+      )}
+
+      {deleting && (
+        <DeleteModal
+          transfer={deleting}
+          locale={locale}
+          onClose={() => {
+            setDeleting(null)
+            setEngaged(null)
+          }}
           onDeleted={refreshTransfers}
         />
       )}

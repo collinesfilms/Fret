@@ -7,13 +7,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, type TransferFile, type TransferSummary } from '../lib/api'
 import { countdown, formatBytes, plural } from '../lib/format'
 import { translate, type Locale, type StringKey } from '../lib/i18n'
-import { Grow, Segmented } from './Controls'
+import { Grow, Segmented, useGrabToDismiss } from './Controls'
 import { FileList, Morph } from './Device'
 
 type Filter = 'all' | 'expiring' | 'locked'
-
-/** Past this many pixels of downward drag, the mobile sheet dismisses. */
-const DISMISS_AFTER = 70
 
 /**
  * How long a deleted row stays on screen after it has left the list.
@@ -61,18 +58,13 @@ export function TransfersSheet({
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
   const [openRow, setOpenRow] = useState<string | null>(null)
-  const [grabY, setGrabY] = useState(0)
-  const dragging = useRef(false)
-  const dragStart = useRef(0)
+  const { grabHandlers, grabStyle } = useGrabToDismiss(open, onClose)
   const t = (key: StringKey, vars?: Record<string, string | number>) =>
     translate(locale, key, vars)
 
   // Reopening should feel fresh rather than resuming a stale search.
   useEffect(() => {
-    if (!open) {
-      setOpenRow(null)
-      setGrabY(0)
-    }
+    if (!open) setOpenRow(null)
   }, [open])
 
   useEffect(() => {
@@ -176,25 +168,6 @@ export function TransfersSheet({
 
   const filtered = query.trim() !== '' || filter !== 'all'
 
-  const onGrabDown = (event: React.PointerEvent) => {
-    dragging.current = true
-    dragStart.current = event.clientY
-    event.currentTarget.setPointerCapture(event.pointerId)
-  }
-  const onGrabMove = (event: React.PointerEvent) => {
-    if (!dragging.current) return
-    const delta = Math.max(0, event.clientY - dragStart.current)
-    if (delta > 2) setGrabY(delta)
-  }
-  const onGrabUp = () => {
-    if (!dragging.current) return
-    dragging.current = false
-    const far = grabY > DISMISS_AFTER
-    setGrabY(0)
-    // A tap on the handle closes too, which is what a thumb expects.
-    if (far || grabY === 0) onClose()
-  }
-
   return (
     <>
       <div
@@ -204,20 +177,13 @@ export function TransfersSheet({
       />
       <aside
         className={`fret-sheet${open ? ' fret-sheet--open' : ''}`}
-        style={
-          grabY > 0
-            ? { transform: `translateY(${grabY}px)`, transition: 'none' }
-            : undefined
-        }
+        style={grabStyle}
         aria-hidden={!open}
         aria-label={t('sheet.title')}
       >
         <div
           className="fret-sheet__grab"
-          onPointerDown={onGrabDown}
-          onPointerMove={onGrabMove}
-          onPointerUp={onGrabUp}
-          onPointerCancel={onGrabUp}
+          {...grabHandlers}
           role="button"
           tabIndex={open ? 0 : -1}
           aria-label={t('sheet.title')}

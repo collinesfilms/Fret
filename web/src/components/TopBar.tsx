@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import { api, type AdminStats, type Expiry, type Me, type SlugStyle, type Theme } from '../lib/api'
 import { formatBytes, pad2 } from '../lib/format'
 import { counted, translate, type Locale, type StringKey } from '../lib/i18n'
-import { Segmented } from './Controls'
+import { Segmented, useGrabToDismiss } from './Controls'
 
 /** The offered slug lengths. Six is still unguessable; twelve is belt-and-braces. */
 const SLUG_LENGTHS = [6, 8, 10, 12]
@@ -124,22 +124,28 @@ export function TopBar({
           <span className="fret-avatar__signout">{t('prefs.signOut')}</span>
         </button>
 
-        {menu === 'settings' && (
-          <>
-            {/*
-              The scrim only exists on a phone, where the settings are a sheet
-              rather than a card hanging off the button that opened them. On a
-              desktop a popover that dimmed the whole page to show three
-              segmented controls would be shouting.
-            */}
-            <div
-              className="fret-popover__scrim"
-              onClick={() => setMenu(null)}
-              aria-hidden="true"
-            />
-            <SettingsPopover me={me} locale={locale} onUpdateMe={onUpdateMe} />
-          </>
-        )}
+        {/*
+          Mounted whether or not it is showing, so it can leave the way it
+          arrived. Rendering it only while open meant it slid up on a phone
+          and then simply blinked out of existence — an entrance with no exit.
+
+          The scrim only exists on a phone, where the settings are a sheet
+          rather than a card hanging off the button that opened them. On a
+          desktop a popover that dimmed the whole page to show three segmented
+          controls would be shouting.
+        */}
+        <div
+          className={`fret-popover__scrim${menu === 'settings' ? ' fret-popover__scrim--on' : ''}`}
+          onClick={() => setMenu(null)}
+          aria-hidden="true"
+        />
+        <SettingsPopover
+          open={menu === 'settings'}
+          me={me}
+          locale={locale}
+          onUpdateMe={onUpdateMe}
+          onClose={() => setMenu(null)}
+        />
       </div>
     </div>
   )
@@ -166,16 +172,20 @@ function SettingsGlyph() {
 }
 
 function SettingsPopover({
+  open,
   me,
   locale,
   onUpdateMe,
+  onClose,
 }: {
+  open: boolean
   me: Me
   locale: Locale
   onUpdateMe: (me: Me) => void
+  onClose: () => void
 }) {
   const [stats, setStats] = useState<AdminStats | null>(null)
-  const [saving, setSaving] = useState(false)
+  const { grabHandlers, grabStyle } = useGrabToDismiss(open, onClose)
   const t = (key: StringKey, vars?: Record<string, string | number>) =>
     translate(locale, key, vars)
 
@@ -184,26 +194,36 @@ function SettingsPopover({
     api.adminStats().then(setStats).catch(() => setStats(null))
   }, [me.superadmin])
 
+  /*
+   * Nothing is dimmed while this is in flight. The surface used to drop to
+   * 70% opacity for the length of the request, which on a phone-sized sheet
+   * read as the whole panel flickering every time you touched a control — a
+   * bigger event than the change itself. The segmented control already
+   * confirms for itself when the server has taken it.
+   */
   const save = async (patch: Parameters<typeof api.savePreferences>[0]) => {
-    setSaving(true)
     try {
       onUpdateMe(await api.savePreferences(patch))
     } catch {
       // A failed preference save is not worth interrupting anyone over; the
       // control simply stays where it was.
-    } finally {
-      setSaving(false)
     }
   }
 
   return (
-    <div className="fret-popover" style={{ opacity: saving ? 0.7 : 1 }}>
+    <div
+      className={`fret-popover${open ? ' fret-popover--open' : ''}`}
+      style={grabStyle}
+      inert={!open}
+      aria-hidden={!open}
+    >
       {/*
         Only drawn at phone widths, where this is a sheet: the same grab bar
-        the transfers sheet wears, because they arrive the same way and a
-        thumb should not have to learn two vocabularies for it.
+        the transfers sheet wears, and now the same gesture too, because they
+        arrive the same way and a thumb should not have to learn two
+        vocabularies for it.
       */}
-      <div className="fret-popover__grab" aria-hidden="true" />
+      <div className="fret-popover__grab" {...grabHandlers} />
 
       <div className="fret-popover__stack">
         <div className="fret-popover__stackLabel">{t('prefs.theme')}</div>
