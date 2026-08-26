@@ -215,6 +215,17 @@ async function captureTray() {
   await context.close()
 }
 
+/** The settings at phone width, where they arrive as a sheet from the bottom. */
+async function captureMobileSettings() {
+  const { context, page } = await open({ viewport: MOBILE })
+  await page.locator('.fret-iconpill').nth(1).click()
+  await page.waitForSelector('.fret-popover')
+  await page.waitForSelector('.fret-admin', { timeout: 10_000 }).catch(() => {})
+  await page.waitForTimeout(500)
+  await shot(page, 'mobile-settings')
+  await context.close()
+}
+
 /** The same drawer at phone width, where it runs the full width of the device. */
 async function captureMobileTray() {
   const { context, page } = await open({ viewport: MOBILE })
@@ -339,6 +350,7 @@ const SHOTS = {
   recipient: captureRecipient,
   'recipient-locked': captureRecipientLocked,
   'mobile-sheet': captureMobile,
+  'mobile-settings': captureMobileSettings,
 }
 
 async function main() {

@@ -125,7 +125,20 @@ export function TopBar({
         </button>
 
         {menu === 'settings' && (
-          <SettingsPopover me={me} locale={locale} onUpdateMe={onUpdateMe} />
+          <>
+            {/*
+              The scrim only exists on a phone, where the settings are a sheet
+              rather than a card hanging off the button that opened them. On a
+              desktop a popover that dimmed the whole page to show three
+              segmented controls would be shouting.
+            */}
+            <div
+              className="fret-popover__scrim"
+              onClick={() => setMenu(null)}
+              aria-hidden="true"
+            />
+            <SettingsPopover me={me} locale={locale} onUpdateMe={onUpdateMe} />
+          </>
         )}
       </div>
     </div>
@@ -185,6 +198,13 @@ function SettingsPopover({
 
   return (
     <div className="fret-popover" style={{ opacity: saving ? 0.7 : 1 }}>
+      {/*
+        Only drawn at phone widths, where this is a sheet: the same grab bar
+        the transfers sheet wears, because they arrive the same way and a
+        thumb should not have to learn two vocabularies for it.
+      */}
+      <div className="fret-popover__grab" aria-hidden="true" />
+
       <div className="fret-popover__stack">
         <div className="fret-popover__stackLabel">{t('prefs.theme')}</div>
         <Segmented<Theme>

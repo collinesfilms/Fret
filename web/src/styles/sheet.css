@@ -710,3 +710,25 @@
   background: var(--body);
   color: var(--fg);
 }
+
+/*
+ * The sheet's own mono type, lifted on a phone for the same reason as the
+ * drawer's: these are the countdown, the size, the download count and the
+ * four row actions — the whole reason anyone opens this list — and at 5.5px a
+ * tile's unit is a smudge rather than a word.
+ */
+@media (max-width: 640px) {
+  .fret-row__meta,
+  .fret-stat__label {
+    font-size: 8.5px;
+  }
+
+  .fret-row__countdown,
+  .fret-rowaction {
+    font-size: 9px;
+  }
+
+  .fret-tile__unit {
+    font-size: 6.5px;
+  }
+}

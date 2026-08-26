@@ -176,14 +176,23 @@ the filenames, not the size, not the sender.
 
 ### On a phone
 
-The sheet arrives from the bottom with a grab handle instead of a close button,
-because that is what a thumb reaches for. The options drawer runs the full width
-of the device at phone size, where an inset either side would be a visible slice
-of the screen rather than a detail.
+Sheets arrive from the bottom with a grab handle instead of a close button,
+because that is what a thumb reaches for — the transfers list and the settings
+both, so there is one vocabulary for "a surface came up" rather than two. The
+options drawer runs the full width of the device at phone size, where an inset
+either side would be a visible slice of the screen rather than a detail.
+
+The mono type goes up a step throughout. These sizes were set at arm's length
+on a desktop, where 7px tracked out reads as texture; held twelve inches from
+your face it is just small, and none of it is decorative. Text fields meet iOS
+at 16px, below which Safari zooms the whole page in on focus and never zooms
+back out. Pinch-zoom is left alone — the fix for a bad zoom is not taking zoom
+away.
 
 <p align="center">
-  <img src="docs/screenshots/mobile-sheet.png" alt="The transfers sheet on mobile" width="320">
-  <img src="docs/screenshots/mobile-tray.png" alt="The options drawer on mobile" width="320">
+  <img src="docs/screenshots/mobile-sheet.png" alt="The transfers sheet on mobile" width="266">
+  <img src="docs/screenshots/mobile-tray.png" alt="The options drawer on mobile" width="266">
+  <img src="docs/screenshots/mobile-settings.png" alt="Settings on mobile" width="266">
 </p>
 
 ---

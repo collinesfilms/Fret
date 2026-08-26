@@ -16,6 +16,24 @@ body {
   overflow-x: hidden;
 }
 
+/*
+ * Kills the wait a touch browser puts before every tap while it decides
+ * whether a second one is coming, which is what makes a phone feel a beat
+ * behind a desktop.
+ *
+ * Deliberately not user-scalable=no on the viewport, which would have the
+ * same effect on the delay and also take pinch-zoom away from everyone who
+ * needs it. Nothing here is too small to want a closer look at.
+ */
+button,
+a,
+label,
+.fret-row__main,
+.fret-rowaction,
+.fret-segmented__item {
+  touch-action: manipulation;
+}
+
 button,
 input {
   font-family: inherit;

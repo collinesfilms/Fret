@@ -251,6 +251,26 @@
   appearance: none;
 }
 
+/*
+ * iOS Safari zooms the whole page in whenever a field it is focusing is set
+ * below 16px, and does not zoom back out when the field is left. Every mono
+ * field here is 10.5px, so on a phone every tap on the link or the password
+ * left the device blown up and off-centre — which is what "the zoom is wrong"
+ * turns out to mean. There is no way to opt out of the behaviour short of
+ * disabling pinch-zoom for everybody, so the field meets it at its number.
+ *
+ * It reads well at this size anyway: the drawer's fields hold a slug and a
+ * password, which are the two things on a phone you most want to be able to
+ * check without leaning in.
+ */
+@media (max-width: 640px) {
+  .fret-field {
+    font-size: 16px;
+    letter-spacing: 0.02em;
+    padding: 11px 12px;
+  }
+}
+
 .fret-field:focus {
   outline: none;
   border-color: var(--fg3);
@@ -377,6 +397,38 @@
   outline-offset: -3px;
 }
 
+/*
+ * The mono type, one step up on a phone.
+ *
+ * These sizes were set at arm's length on a desktop, where 7px tracked out is
+ * a label and reads as texture. Held twelve inches from your face on a bus it
+ * is just small. Nothing here is decorative — every one of them is a word you
+ * are expected to act on — so on a narrow screen they each go up a step.
+ *
+ * A step, not a redesign: the ratio between them is what makes the drawer
+ * read as one object with a hierarchy rather than a stack of unrelated
+ * controls, and that survives only if they all move together.
+ */
+@media (max-width: 640px) {
+  .fret-row__label,
+  .fret-popover__stackLabel {
+    font-size: 9px;
+  }
+
+  .fret-field__action {
+    font-size: 8px;
+  }
+
+  .fret-segmented__item {
+    font-size: 9.5px;
+    padding: 9px 4px;
+  }
+
+  .fret-tray__mark {
+    font-size: 7px;
+  }
+}
+
 /* ---------- popover ---------- */
 
 .fret-popover {
@@ -391,6 +443,66 @@
   box-shadow: var(--lift);
   padding: 14px;
   animation: fretPop var(--durFast) var(--easeOut) both;
+}
+
+/* Desktop: neither of these exists. The popover hangs off its button. */
+.fret-popover__scrim,
+.fret-popover__grab {
+  display: none;
+}
+
+/*
+ * On a phone the settings are a sheet.
+ *
+ * A 268px card pinned to the top-right corner is a desktop shape: it assumes
+ * a pointer that arrived from the button, and it puts every control at the
+ * far end of the screen from the thumb holding the phone. The same content
+ * arriving from the bottom edge is reachable, and it is how the transfers
+ * sheet already behaves — one vocabulary for "a surface came up", not two.
+ */
+@media (max-width: 640px) {
+  .fret-popover__scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    background: var(--scrim);
+    animation: fretFade var(--durFast) ease both;
+  }
+
+  .fret-popover {
+    position: fixed;
+    inset: auto 0 0 0;
+    width: auto;
+    max-height: 82dvh;
+    overflow-y: auto;
+    border-radius: 20px 20px 0 0;
+    border-bottom: none;
+    /* The home indicator sits over the last row otherwise. */
+    padding: 0 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    box-shadow: var(--shUp);
+    animation: fretSheetUp var(--durSheet) var(--easeOut) both;
+  }
+
+  /* The transfers sheet's handle, at the same size and in the same place. */
+  .fret-popover__grab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0 6px;
+    position: sticky;
+    top: 0;
+    background: var(--body);
+    z-index: 1;
+  }
+
+  .fret-popover__grab::before {
+    content: '';
+    width: 38px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--edge2);
+  }
 }
 
 .fret-popover__row {
