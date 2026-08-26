@@ -115,6 +115,15 @@ keys: one soft inset pass and a hairline of light along the lower lip.
 - **Type rule.** Machine-generated or countable → Martian Mono, small and
   tracked out. Human-written → Schibsted Grotesk. `lib/format.ts` produces
   every mono value.
+- **Two ladders, ten steps, no literals.** `--m1`–`--m6` for mono and
+  `--s1`–`--s4` for sans, in `tokens.css`; the only `font-size` in the
+  stylesheets that is not one of them is the two `clamp()` readouts, which
+  scale with the device rather than with the type around them. Before the
+  ladder the interface had eleven mono sizes and seven sans, most of them half
+  a pixel from a neighbour and none of them a decision. **The ladder does not
+  change at the breakpoint.** A phone gets denser padding, not smaller type —
+  the second set of sizes that used to live in the mobile blocks spent its
+  time disagreeing with the first, and every new rule had to be written twice.
 - **Accent means one thing:** alert, uploading, unsaved, invalid. It is not a
   focus ring — focus is `--fg2`. The palette carries exactly two semantic
   colours and no third.
@@ -122,10 +131,10 @@ keys: one soft inset pass and a hairline of light along the lower lip.
   or a typographic character. Texture is crosshatched gradients at deliberately
   odd angles — the drawer's brushed grain is at 94° and 86° — so the lines
   never come into register with the pixel grid and moiré.
-- **Motion is a vocabulary, not a per-component decision.** Four easings and
-  five durations in `tokens.css`; nothing hardcodes a curve. `--easeTray`
-  overshoots (weight arriving), `--easeExit` never does (a thing leaving
-  should not bounce).
+- **Motion is a vocabulary, not a per-component decision.** Five easings and
+  a named duration for every kind of movement, all in `tokens.css`; nothing
+  hardcodes a curve or a length. `--easeTray` overshoots (weight arriving),
+  `--easeExit` never does (a thing leaving should not bounce).
 - The device's growth animates a **measured height**, not
   `grid-template-rows`. That interpolation cannot be feature-detected — the
   declaration parses everywhere and simply refuses to animate on older
@@ -144,6 +153,26 @@ where it is actually true. The upload device only ever holds a transfer that is
 still arriving, so its name has never been anywhere and a rename there costs
 nothing — that asymmetry is the reason the warning lives in one place and not
 the other.
+
+A label inside a key changes by **fading over one character at a time**, left
+to right — the old line clearing before the new one starts writing. The two
+lines used to slide past each other like a split-flap and it read as a glitch:
+a third of an em is too small to look like a mechanism and too large to go
+unnoticed, and it was the only type in the interface that moved.
+
+**The two cascades must not overlap**, and that is the part worth remembering.
+Both lines are centred on the same point but are different lengths, so nothing
+lines up between them: crossfade *Copy link* into *Copied to clipboard* and the
+key spends a tenth of a second reading `CopieCbpy link`, which is the same
+glitch by another route. The seam is arithmetic in `device.css` —
+`--durCascade + --durPress` — rather than a delay picked by eye, so it survives
+a change to either duration.
+
+`Morph` hands CSS one number per character (`--fret-morph-at`, 0 at the first
+and 1 at the last); the spread is a fixed duration, so a three-letter word
+ripples and a long one wipes and both take the same time. The split spans are
+`aria-hidden` with the whole line given once in a `.fret-sr` sibling: a screen
+reader handed a span per character reads it out letter by letter.
 
 ## An effect that cancels its own timer
 

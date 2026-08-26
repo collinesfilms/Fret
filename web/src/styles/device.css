@@ -81,7 +81,7 @@
 
 .fret-screen__stripLabel {
   font-family: var(--mono);
-  font-size: 8.5px;
+  font-size: var(--m3);
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--screenDim);
@@ -90,7 +90,7 @@
 .fret-screen__stripRight {
   margin-left: auto;
   font-family: var(--mono);
-  font-size: 8.5px;
+  font-size: var(--m3);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--screenDim);
@@ -110,7 +110,7 @@
 
 .fret-screen__hint {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--m4);
   letter-spacing: 0.14em;
   color: var(--screenDim);
   margin-top: 9px;
@@ -189,7 +189,7 @@
 
 .fret-readout__unit {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--m3);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--screenDim);
@@ -199,7 +199,7 @@
 .fret-readout__right {
   margin-left: auto;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--m3);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--screenDim);
@@ -300,7 +300,7 @@
 }
 .fret-filelist__name {
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: var(--m4);
   letter-spacing: 0.04em;
   color: var(--listFg);
   overflow: hidden;
@@ -311,7 +311,7 @@
 }
 .fret-filelist__size {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--m3);
   letter-spacing: 0.1em;
   color: var(--listDim);
   flex-shrink: 0;
@@ -388,7 +388,7 @@
   box-shadow: var(--keyShadow);
   border-radius: 12px;
   color: var(--fg);
-  font-size: 14.5px;
+  font-size: var(--s2);
   font-weight: 500;
   letter-spacing: -0.01em;
   padding: 14px 18px;
@@ -408,7 +408,7 @@
 .fret-key--alt {
   background: var(--keyAlt);
   font-family: var(--mono);
-  font-size: 8.5px;
+  font-size: var(--m3);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--fg2);
@@ -466,7 +466,7 @@
 
 .fret-actions__primary {
   flex: 1;
-  font-size: 13.5px;
+  font-size: var(--s2);
   padding: 14px 16px;
   min-width: 0;
 }
@@ -490,13 +490,19 @@
 }
 
 /*
- * A line of text trading places with another.
+ * A line of text handing over to another.
  *
  * The incoming line is in flow, so the cell is the width of whatever the
  * label now says; the outgoing one is taken out of flow over the top of it,
  * centred on the same point, so it can leave without dragging the width with
  * it. Clipping is on the parent rather than here — a key already clips its
- * label, and clipping twice would cut the travel short.
+ * label.
+ *
+ * Both lines are split into characters, and each character carries a
+ * --fret-morph-at: where it sits in the word, 0 at the first and 1 at the
+ * last. That single number is all the stagger needs — the spread and the lag
+ * are durations in tokens.css, so the cascade is part of the motion
+ * vocabulary rather than a decision made here.
  */
 .fret-morph {
   position: relative;
@@ -515,12 +521,43 @@
   inset: 0;
   display: block;
   text-align: center;
-  animation: fretMorphOut var(--durBase) var(--easeExit) both;
 }
 
-.fret-morph__in--arriving {
-  display: inline-block;
-  animation: fretMorphIn var(--durBase) var(--easeOut) both;
+/*
+ * A character mid-exchange.
+ *
+ * `display: inline` deliberately: these have to stay ordinary text so the
+ * line still breaks nowhere, still centres, and still takes the parent's
+ * ellipsis when the label is longer than the key. Anything with a box of its
+ * own — inline-block included — takes the truncation away.
+ */
+.fret-morph__ch {
+  animation-fill-mode: both;
+}
+
+.fret-morph__out .fret-morph__ch {
+  animation-name: fretMorphOut;
+  animation-duration: var(--durPress);
+  animation-timing-function: var(--easeExit);
+  animation-delay: calc(var(--fret-morph-at) * var(--durCascade));
+}
+
+/*
+ * The arrival begins exactly where the departure ends — the spread plus one
+ * character's fade — rather than at a delay picked by eye. The two lines are
+ * centred independently, so they cannot be allowed to overlap: character five
+ * of a nine-character label and character five of a nineteen-character one
+ * are nowhere near the same place on screen, and a crossfade between them is
+ * two strings printed over each other. Written as arithmetic so the seam
+ * survives any change to either duration.
+ */
+.fret-morph__in--arriving .fret-morph__ch {
+  animation-name: fretMorphIn;
+  animation-duration: var(--durFast);
+  animation-timing-function: var(--easeOut);
+  animation-delay: calc(
+    var(--durCascade) + var(--durPress) + var(--fret-morph-at) * var(--durCascade)
+  );
 }
 
 /*
@@ -537,7 +574,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: var(--s1);
   flex-shrink: 0;
   text-decoration: none;
   animation: fretRing 2.6s ease-in-out infinite;
@@ -605,14 +642,15 @@
     border-radius: 18px;
   }
 
+  /* Density comes in on a phone; the type does not. Sizes are one ladder
+     across both breakpoints — see tokens.css — so a key that reads as
+     secondary on a desktop still reads as secondary here. */
   .fret-key {
-    font-size: 13px;
     padding: 12px 14px;
     border-radius: 11px;
   }
 
   .fret-actions__primary {
-    font-size: 13px;
     padding: 12px 14px;
   }
 

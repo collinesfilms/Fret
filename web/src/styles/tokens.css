@@ -50,6 +50,46 @@
   --mono: 'Martian Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   /*
+   * Type.
+   *
+   * Two ladders, because there are two voices: mono for what the machine
+   * produced or counted, sans for what a person wrote. Nothing outside this
+   * block states a size — the interface had collected eleven mono sizes and
+   * seven sans ones, most of them half a pixel from a neighbour, which is not
+   * a hierarchy but the absence of one.
+   *
+   * The same ladder serves a phone and a desktop. An earlier pass gave the
+   * phone its own sizes and the two drifted apart control by control; density
+   * is what should change on a small screen, and that is padding's job.
+   *
+   *   --m1  a unit under a figure, a mark engraved in the case
+   *   --m2  the smallest label you are still expected to act on
+   *   --m3  the standard label: a row, a strip, a segment
+   *   --m4  a value you read rather than scan
+   *   --m5  a value you read and type
+   *   --m6  a figure worth reading at a glance
+   *
+   *   --s1  a sentence, or an action that should stay quiet
+   *   --s2  a name, and every key
+   *   --s3  the title of a dialog
+   *   --s4  the title of a surface
+   *
+   * The two readouts are deliberately outside it. They are set in vw and
+   * scale with the device rather than with the type around them.
+   */
+  --m1: 6.5px;
+  --m2: 7.5px;
+  --m3: 8.5px;
+  --m4: 9.5px;
+  --m5: 11px;
+  --m6: 13px;
+
+  --s1: 12.5px;
+  --s2: 13.5px;
+  --s3: 15px;
+  --s4: 21px;
+
+  /*
    * Motion.
    *
    * Four curves, and each one means something:
@@ -97,6 +137,25 @@
   --durTray: 0.52s;
   --durBeat: 0.66s;
   --durDrain: 0.7s;
+
+  /*
+   * A label changing inside a key: the spread from the first character to the
+   * last. Fixed whatever the label's length, so a short word ripples and a
+   * long one reads as a wipe, and both take the same time.
+   *
+   * There is no second token for how far the incoming line trails the
+   * outgoing one, because it is not a free choice. The two lines are centred
+   * independently, so a character halfway through one sits nowhere near the
+   * halfway character of the other — overlap them at all and the key reads
+   * "CopieCbpy link" for a tenth of a second, which is the glitch this was
+   * meant to fix. The arrival starts exactly where the departure ends, and
+   * device.css computes that rather than naming it.
+   *
+   * Leaving is --durPress a character, arriving is --durFast: a thing leaving
+   * is faster than the same thing arriving, here as everywhere else. The whole
+   * exchange comes to --durTray, which MORPH_MS in Device.tsx has to outlast.
+   */
+  --durCascade: 0.11s;
 }
 
 :root[data-theme='dark'] {
@@ -207,13 +266,23 @@
  * scales with whatever type it is set in, and it is deliberately short of a
  * full line height: this is a label changing its mind, not a departures board.
  */
+/*
+ * A key's label changing. Opacity only, one character at a time.
+ *
+ * The first version translated the two lines past each other like a
+ * split-flap, and at this size it read as a glitch rather than a mechanism:
+ * eight characters sliding a third of an em is small enough to look like the
+ * text jittered and large enough to notice. Nothing else in the interface
+ * moves type. So the letters hold still and hand over instead, left to right,
+ * the direction they are read in — see --durCascade for the timing.
+ */
 @keyframes fretMorphOut {
-  0% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(-0.62em); }
+  0% { opacity: 1; }
+  100% { opacity: 0; }
 }
 @keyframes fretMorphIn {
-  0% { opacity: 0; transform: translateY(0.62em); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
 /*
@@ -248,6 +317,7 @@
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }

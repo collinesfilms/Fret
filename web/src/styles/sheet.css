@@ -157,14 +157,14 @@
 }
 
 .fret-sheet__title {
-  font-size: 21px;
+  font-size: var(--s4);
   font-weight: 600;
   letter-spacing: -0.04em;
 }
 
 .fret-sheet__subtitle {
   font-family: var(--mono);
-  font-size: 8.5px;
+  font-size: var(--m3);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--fg3);
@@ -178,7 +178,7 @@
   border: 1px solid var(--edge);
   background: var(--body);
   color: var(--fg2);
-  font-size: 14px;
+  font-size: var(--s3);
   line-height: 1;
   cursor: pointer;
   margin-left: auto;
@@ -217,7 +217,7 @@
 
 .fret-stat__value {
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: var(--m6);
   letter-spacing: -0.045em;
   color: var(--fg);
   font-variant-numeric: tabular-nums;
@@ -227,7 +227,7 @@
 
 .fret-stat__label {
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: var(--m2);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--fg3);
@@ -238,7 +238,7 @@
 
 .fret-listhead {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--m2);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--fg3);
@@ -315,7 +315,7 @@
 
 .fret-tile__count {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--m5);
   letter-spacing: -0.04em;
   color: var(--fg);
   font-variant-numeric: tabular-nums;
@@ -323,7 +323,7 @@
 
 .fret-tile__unit {
   font-family: var(--mono);
-  font-size: 5.5px;
+  font-size: var(--m1);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--fg3);
@@ -410,7 +410,7 @@
  * name somebody chose rather than a value the machine produced.
  */
 .fret-row__title {
-  font-size: 13px;
+  font-size: var(--s2);
   font-weight: 500;
   letter-spacing: -0.018em;
   color: var(--fg);
@@ -425,7 +425,7 @@
  */
 .fret-row__plus {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--m2);
   letter-spacing: 0.08em;
   color: var(--fg3);
   margin-left: 7px;
@@ -452,7 +452,7 @@
  */
 .fret-row__meta {
   font-family: var(--mono);
-  font-size: 7.5px;
+  font-size: var(--m2);
   letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--fg3);
@@ -471,7 +471,7 @@
 
 .fret-row__countdown {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--m2);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--fg3);
@@ -484,7 +484,7 @@
 
 .fret-chevron {
   color: var(--fg3);
-  font-size: 13px;
+  font-size: var(--s1);
   line-height: 1;
   transition: transform var(--durBase) var(--easeSnap);
 }
@@ -520,7 +520,7 @@
 .fret-rowfiles__waiting {
   padding: 14px 12px;
   font-family: var(--mono);
-  font-size: 7.5px;
+  font-size: var(--m2);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--fg3);
@@ -549,7 +549,7 @@
   padding: 13px 4px;
   box-shadow: none;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--m2);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--fg);
@@ -641,7 +641,7 @@
   text-align: center;
   padding: 34px 12px;
   font-family: var(--mono);
-  font-size: 8.5px;
+  font-size: var(--m3);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--fg3);
@@ -707,14 +707,14 @@
 }
 
 .fret-modal__title {
-  font-size: 16px;
+  font-size: var(--s3);
   font-weight: 600;
   letter-spacing: -0.03em;
 }
 
 .fret-modal__meta {
   font-family: var(--mono);
-  font-size: 8.5px;
+  font-size: var(--m3);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--fg3);
@@ -732,7 +732,7 @@
 .fret-modal__field label {
   display: block;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--m2);
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--fg3);
@@ -749,7 +749,7 @@
 
 .fret-modal__foot .fret-key {
   flex: 1;
-  font-size: 13.5px;
+  font-size: var(--s2);
   padding: 13px 16px;
 }
 
@@ -765,7 +765,7 @@
 }
 
 .fret-ask__title {
-  font-size: 15px;
+  font-size: var(--s3);
   font-weight: 500;
   letter-spacing: -0.012em;
   color: var(--fg);
@@ -783,7 +783,7 @@
 }
 
 .fret-ask__name {
-  font-size: 13px;
+  font-size: var(--s2);
   font-weight: 500;
   letter-spacing: -0.018em;
   color: var(--fg);
@@ -794,7 +794,7 @@
 
 .fret-ask__meta {
   font-family: var(--mono);
-  font-size: 7.5px;
+  font-size: var(--m2);
   letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--fg3);
@@ -805,7 +805,7 @@
 
 /* The consequence, in words, before the button that causes it. */
 .fret-ask__note {
-  font-size: 12.5px;
+  font-size: var(--s1);
   line-height: 1.45;
   color: var(--fg2);
 }
@@ -832,14 +832,6 @@
     padding: 14px 14px 11px;
   }
 
-  .fret-modal__title {
-    font-size: 15px;
-  }
-
-  .fret-modal__meta {
-    font-size: 8px;
-  }
-
   .fret-modal__body {
     padding: 13px 14px;
     gap: 12px;
@@ -855,22 +847,40 @@
   }
 
   .fret-modal__foot .fret-key {
-    font-size: 13px;
     padding: 12px 14px;
   }
 
   /*
-   * The confirmation is a bottom sheet here like every other modal. Its
-   * desktop width is declared after the block that makes modals full-width on
-   * a phone, so without this it kept its 340px and sat in the corner.
+   * The confirmation stays a modal here, alone among them.
+   *
+   * Every other modal becomes a bottom sheet on a phone because it is a place
+   * you work: a form with fields, arriving from the edge the keyboard will
+   * arrive from, big enough to hold both. This one is a question with two
+   * answers and nothing to type. Sliding it up from the bottom puts it
+   * exactly where the sheet it was opened from already is, under the thumb
+   * that was scrolling a second ago — and the destructive answer lands there.
+   * Held in the middle of the screen it reads as what it is: something that
+   * has interrupted you and wants an answer before anything else happens.
+   *
+   * It has to restate the centring because the block above sets every modal
+   * flat against the bottom edge, and the safe-area padding for the same
+   * reason — a floating dialog is nowhere near the home indicator.
    */
-  .fret-modal--ask {
-    width: 100%;
+  .fret-modal--ask,
+  .fret-modal--ask.fret-modal--beside-sheet {
+    top: 50%;
+    bottom: auto;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(340px, calc(100% - 40px));
     max-width: none;
+    border-radius: 18px;
+    animation: fretModalIn var(--durBase) var(--easeSnap) both;
+    max-height: calc(100dvh - 48px);
   }
 
-  .fret-ask__note {
-    font-size: 12px;
+  .fret-modal--ask .fret-modal__foot {
+    padding-bottom: 11px;
   }
 }
 
@@ -880,7 +890,7 @@
   border: 1px solid var(--edge);
   border-radius: 11px;
   color: var(--accent);
-  font-size: 12.5px;
+  font-size: var(--s1);
   font-weight: 500;
   padding: 13px 16px;
   cursor: pointer;
@@ -934,7 +944,7 @@
 .fret-modal__restoreSlug,
 .fret-modal__restoreNote {
   font-family: var(--mono);
-  font-size: 7.5px;
+  font-size: var(--m2);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   overflow: hidden;
@@ -969,7 +979,7 @@
   border-radius: 8px;
   padding: 6px 10px;
   font-family: var(--mono);
-  font-size: 7.5px;
+  font-size: var(--m2);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--fg2);
@@ -985,43 +995,24 @@
 /*
  * The search field.
  *
- * These two declarations used to be an inline style, which meant the mobile
- * type rules could not touch them: a media query loses to a style attribute
- * every time. So the one field you are most likely to type into on a phone
- * stayed at 9.5px while the drawer's fields were at 16 — the fields looked
- * unrelated to each other, and this one still triggered iOS's zoom-on-focus.
+ * It is a field, so it is set at --m5 with the drawer's fields rather than
+ * with the sheet's labels around it. These declarations used to be an inline
+ * style, which put them out of reach of any rule at all: a media query loses
+ * to a style attribute every time, and so did the ladder.
  */
 .fret-sheet__search {
   border-radius: 11px;
-  font-size: 9.5px;
+  font-size: var(--m5);
 }
 
 /*
- * The sheet's own mono type, lifted on a phone for the same reason as the
- * drawer's: these are the countdown, the size, the download count and the
- * four row actions — the whole reason anyone opens this list — and at 5.5px a
- * tile's unit is a smudge rather than a word.
+ * The sheet, tightened for a phone. Density only — the type is one ladder
+ * across both breakpoints, for the reason given in controls.css.
  */
 @media (max-width: 640px) {
   /* Sized with the other fields, for the reason given beside them. */
   .fret-sheet__search {
-    font-size: 10.5px;
     padding: 10px 12px;
-  }
-
-  .fret-row__title {
-    font-size: 13px;
-  }
-
-  .fret-row__meta,
-  .fret-stat__label,
-  .fret-row__countdown,
-  .fret-rowaction {
-    font-size: 8px;
-  }
-
-  .fret-tile__unit {
-    font-size: 6px;
   }
 
   /*
@@ -1046,19 +1037,11 @@
     border-radius: 10px;
   }
 
-  .fret-tile__count {
-    font-size: 10px;
-  }
-
   .fret-rowaction {
     padding: 11px 4px;
   }
 
   .fret-stat {
     padding: 9px 10px;
-  }
-
-  .fret-stat__value {
-    font-size: 12px;
   }
 }

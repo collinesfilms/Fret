@@ -349,24 +349,57 @@ export function Scroller({
 }
 
 /**
- * How long an outgoing line stays in the DOM. Must outlast --durBase, which
- * is what the stylesheet gives it to leave in.
+ * How long an outgoing line stays in the DOM.
+ *
+ * Only its own half of the exchange — --durCascade + --durPress, 0.11 + 0.12
+ * — since the incoming line is in flow and stays whether this is here or not.
+ * The margin is there so the last character is never cut off by a re-render
+ * landing on the frame it finishes.
  */
-const MORPH_MS = 320
+const MORPH_MS = 280
+
+/**
+ * Splits a line into the characters that will fade one after another.
+ *
+ * Array.from rather than split(''), so an emoji or an accented character that
+ * arrived as a surrogate pair stays one character instead of being torn into
+ * two halves that then fade at different times.
+ */
+function characters(line: string): string[] {
+  return Array.from(line)
+}
 
 /**
  * A line of text that changes by being replaced rather than rewritten.
  *
  * "Copy link" becoming "Copied to clipboard" is a different sentence, not the
  * same sentence edited, and swapping the characters in place says the wrong
- * thing about it: for one frame the key reads as neither. The outgoing line
- * leaves upward and the incoming one arrives from below, the way a split-flap
- * changes — which is also the only kind of text animation this device has any
- * business doing.
+ * thing about it: for one frame the key reads as neither.
+ *
+ * It used to say so by sliding: the old line up, the new one in from below,
+ * like a split-flap. At label size that read as a glitch — the travel is
+ * about a third of an em, which is too small to look like a mechanism and too
+ * large to go unnoticed, and it is the only type in the interface that moves.
+ * So the letters hold still now and fade instead, one after another from left
+ * to right, the old line clearing before the new one starts writing.
+ *
+ * The clearing is not politeness, it is the whole reason this works. The two
+ * lines are centred on the same point but are different lengths, so nothing
+ * lines up between them — crossfade "Copy link" into "Copied to clipboard"
+ * and the key spends a tenth of a second reading "CopieCbpy link". The seam
+ * between the two cascades is computed in device.css from the durations
+ * either side of it rather than guessed at.
+ *
+ * The stagger is one number per character — where it sits in the word, 0 at
+ * the first and 1 at the last — handed to CSS as --fret-morph-at. How far
+ * that spreads is a duration in tokens.css, and it is fixed, so every label
+ * takes the same time to change: a three-letter word ripples, a long one
+ * wipes.
  *
  * Both lines are laid out in the same cell, so nothing around it moves while
- * they trade places. The box measures itself against whichever is present, so
- * a key that sizes to its label still sizes to it.
+ * they trade places. The split text is hidden from assistive technology and
+ * the whole line given once instead — a screen reader handed a span per
+ * character reads it out letter by letter.
  */
 export function Morph({ children }: { children: string }) {
   const [pair, setPair] = useState<{ current: string; leaving: string | null }>({
@@ -402,19 +435,53 @@ export function Morph({ children }: { children: string }) {
     )
   }, [pair.leaving])
 
+  const arriving = pair.leaving !== null
+
   return (
     <span className="fret-morph">
       {pair.leaving !== null && (
-        <span className="fret-morph__out" aria-hidden="true" key={pair.leaving}>
-          {pair.leaving}
-        </span>
+        <Cascade className="fret-morph__out" key={pair.leaving} line={pair.leaving} />
       )}
       <span
-        className={`fret-morph__in${pair.leaving !== null ? ' fret-morph__in--arriving' : ''}`}
+        className={`fret-morph__in${arriving ? ' fret-morph__in--arriving' : ''}`}
+        aria-hidden="true"
       >
-        {pair.current}
+        {/* Only split while something is actually animating. The rest of the
+            time the label is one text node, which is what it should be. */}
+        {arriving ? <Characters line={pair.current} /> : pair.current}
       </span>
+      <span className="fret-sr">{pair.current}</span>
     </span>
+  )
+}
+
+function Cascade({ className, line }: { className: string; line: string }) {
+  return (
+    <span className={className} aria-hidden="true">
+      <Characters line={line} />
+    </span>
+  )
+}
+
+function Characters({ line }: { line: string }) {
+  const glyphs = characters(line)
+  /* A one-character label has no spread to divide, and dividing by zero would
+     hand CSS a NaN it silently ignores — leaving that character with no
+     animation at all. It sits at the start of the cascade instead. */
+  const last = Math.max(glyphs.length - 1, 1)
+
+  return (
+    <>
+      {glyphs.map((glyph, index) => (
+        <span
+          key={index}
+          className="fret-morph__ch"
+          style={{ '--fret-morph-at': index / last } as CSSProperties}
+        >
+          {glyph}
+        </span>
+      ))}
+    </>
   )
 }
 

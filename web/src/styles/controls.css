@@ -38,7 +38,7 @@
 
 .fret-pill__count {
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: var(--m4);
   letter-spacing: 0.1em;
   color: var(--fg);
   font-variant-numeric: tabular-nums;
@@ -46,7 +46,7 @@
 
 .fret-pill__label {
   font-family: var(--mono);
-  font-size: 8.5px;
+  font-size: var(--m3);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--fg3);
@@ -102,14 +102,14 @@
   align-items: center;
   justify-content: center;
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: var(--m4);
   letter-spacing: 0.06em;
   color: var(--fg2);
   flex-shrink: 0;
 }
 
 .fret-avatar__signout {
-  font-size: 12.5px;
+  font-size: var(--s1);
   font-weight: 500;
   color: var(--accent);
   white-space: nowrap;
@@ -231,7 +231,7 @@
   width: 76px;
   flex-shrink: 0;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--m2);
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--fg3);
@@ -251,7 +251,7 @@
   border-radius: 10px;
   padding: 10px 12px;
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: var(--m5);
   letter-spacing: 0.06em;
   color: var(--fg);
   transition: border-color var(--durFast) ease;
@@ -275,7 +275,7 @@
 
 .fret-field__error {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--m2);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--accent);
@@ -355,7 +355,7 @@
   background: transparent;
   color: var(--fg3);
   font-family: var(--mono);
-  font-size: 8.5px;
+  font-size: var(--m3);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   padding: 7px 4px;
@@ -523,7 +523,7 @@
 
 .fret-popover__label {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--m2);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--fg3);
@@ -533,7 +533,7 @@
 .fret-popover__value {
   margin-left: auto;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--m4);
   letter-spacing: 0.1em;
   color: var(--fg2);
   text-align: right;
@@ -552,7 +552,7 @@
 
 .fret-popover__stackLabel {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--m2);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--fg3);
@@ -600,14 +600,14 @@
 
 .fret-admin__label {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--m2);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--fg3);
 }
 
 .fret-admin__value {
-  font-size: 12.5px;
+  font-size: var(--s1);
   font-weight: 500;
   letter-spacing: -0.02em;
   color: var(--fg);
@@ -615,7 +615,7 @@
 
 .fret-admin__sub {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--m2);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--fg3);
@@ -728,7 +728,7 @@
   margin-top: 13px;
   text-align: right;
   font-family: var(--mono);
-  font-size: 6.5px;
+  font-size: var(--m1);
   letter-spacing: 0.28em;
   text-transform: uppercase;
   color: var(--fg3);
@@ -848,7 +848,7 @@
   border-radius: 10px;
   padding: 0 10px;
   font-family: var(--mono);
-  font-size: 7px;
+  font-size: var(--m2);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--fg3);
@@ -914,7 +914,7 @@
   gap: 6px;
   padding-top: 7px;
   font-family: var(--mono);
-  font-size: 7.5px;
+  font-size: var(--m2);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--accent);
@@ -936,50 +936,32 @@
  * which is how the field action, the drawer's padding and its engraved mark
  * were quietly ignoring this block until now.
  *
- * An earlier pass took all of this up a step and it came out chunky: at hand
- * distance the labels did not need the help, and enlarging them only made the
- * one thing that genuinely cannot shrink — the field, held at 16px because
- * below that iOS zooms the page on focus — look less out of place by dragging
- * everything else up to meet it. The answer was the other way round. These sit
- * a half step above their desktop sizes at most, and the field is quieted with
- * padding instead.
+ * There are no type sizes in here any more. An earlier pass carried a second
+ * set of sizes for the phone, half a step off the desktop ones, and the two
+ * ladders spent their time disagreeing: every new rule had to be written
+ * twice and the pair drifted. The interface now has one ladder (tokens.css)
+ * and this block changes density only — padding, radii, widths. That is the
+ * thing a small screen actually needs.
+ *
+ * The field is the one size worth a note. It sat at 16px because Safari zooms
+ * the page when you focus anything smaller and never zooms back. But 16px
+ * mono beside 8px labels made the fields the loudest thing on a screen full
+ * of small, tidy controls, and the fields are not the point — the link is,
+ * and the slug in it is eight characters. It is on the ladder at --m5 now,
+ * and quieted with padding here. If the focus zoom turns out to be worse than
+ * the mismatch, --m5 is the whole fix.
  */
 @media (max-width: 640px) {
-  .fret-row__label,
-  .fret-popover__stackLabel {
-    font-size: 8px;
-  }
-
   .fret-field__action {
-    font-size: 7px;
     min-width: 68px;
     border-radius: 9px;
   }
 
   .fret-segmented__item {
-    font-size: 8.5px;
     padding: 7px 4px;
   }
 
-  .fret-tray__mark {
-    font-size: 6.5px;
-  }
-
-  /*
-   * Sized with the rest of the interface rather than against iOS.
-   *
-   * These sat at 16px because Safari zooms the page when you focus anything
-   * smaller and never zooms back. But 16px mono beside 8px labels made the
-   * fields the loudest thing on a screen full of small, tidy controls, and
-   * the fields are not the point — the link is, and the slug in it is eight
-   * characters. The zoom is a nuisance you can pinch out of; a permanently
-   * out-of-scale interface is one you look at every time.
-   *
-   * If the focus zoom turns out to be worse than the mismatch, this number is
-   * the whole fix: put it back to 16px.
-   */
   .fret-field {
-    font-size: 11px;
     padding: 9px 11px;
     border-radius: 9px;
   }
