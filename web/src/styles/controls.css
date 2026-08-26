@@ -274,8 +274,7 @@
 @media (max-width: 640px) {
   .fret-field {
     font-size: 16px;
-    letter-spacing: 0.02em;
-    padding: 11px 12px;
+    letter-spacing: 0.01em;
   }
 }
 
@@ -410,38 +409,6 @@
   /* Inside the track: the outline would otherwise be clipped by the overflow
      that keeps the handle in its channel. */
   outline-offset: -3px;
-}
-
-/*
- * The mono type, one step up on a phone.
- *
- * These sizes were set at arm's length on a desktop, where 7px tracked out is
- * a label and reads as texture. Held twelve inches from your face on a bus it
- * is just small. Nothing here is decorative — every one of them is a word you
- * are expected to act on — so on a narrow screen they each go up a step.
- *
- * A step, not a redesign: the ratio between them is what makes the drawer
- * read as one object with a hierarchy rather than a stack of unrelated
- * controls, and that survives only if they all move together.
- */
-@media (max-width: 640px) {
-  .fret-row__label,
-  .fret-popover__stackLabel {
-    font-size: 9px;
-  }
-
-  .fret-field__action {
-    font-size: 8px;
-  }
-
-  .fret-segmented__item {
-    font-size: 9.5px;
-    padding: 9px 4px;
-  }
-
-  .fret-tray__mark {
-    font-size: 7px;
-  }
 }
 
 /* ---------- popover ---------- */
@@ -937,4 +904,64 @@
   border-radius: 999px;
   background: var(--accent);
   flex-shrink: 0;
+}
+
+/*
+ * The mono type on a phone.
+ *
+ * Kept at the end of the file on purpose. A media query adds no specificity,
+ * so any equally specific rule below it wins regardless of the viewport —
+ * which is how the field action, the drawer's padding and its engraved mark
+ * were quietly ignoring this block until now.
+ *
+ * An earlier pass took all of this up a step and it came out chunky: at hand
+ * distance the labels did not need the help, and enlarging them only made the
+ * one thing that genuinely cannot shrink — the field, held at 16px because
+ * below that iOS zooms the page on focus — look less out of place by dragging
+ * everything else up to meet it. The answer was the other way round. These sit
+ * a half step above their desktop sizes at most, and the field is quieted with
+ * padding instead.
+ */
+@media (max-width: 640px) {
+  .fret-row__label,
+  .fret-popover__stackLabel {
+    font-size: 8px;
+  }
+
+  .fret-field__action {
+    font-size: 7px;
+    min-width: 68px;
+    border-radius: 9px;
+  }
+
+  .fret-segmented__item {
+    font-size: 8.5px;
+    padding: 7px 4px;
+  }
+
+  .fret-tray__mark {
+    font-size: 6.5px;
+  }
+
+  /*
+   * The field keeps its 16px, but stops looking like a text box on a form:
+   * tighter, with the value sitting closer to the label beside it.
+   */
+  .fret-field {
+    padding: 9px 11px;
+    border-radius: 9px;
+  }
+
+  .fret-row {
+    gap: 10px;
+    padding: 9px 0;
+  }
+
+  .fret-row__label {
+    width: 62px;
+  }
+
+  .fret-tray__inner {
+    padding: 12px 14px 13px;
+  }
 }

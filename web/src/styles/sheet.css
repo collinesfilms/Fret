@@ -23,7 +23,19 @@
   pointer-events: auto;
 }
 
+/*
+ * The modal's own scrim, which has to sit above the transfers sheet.
+ *
+ * The sheet used to be dismissed before the modal opened, purely because this
+ * scrim was underneath it and would otherwise have left the sheet undimmed
+ * between the two. On a phone that meant the sheet sliding out, the modal
+ * arriving, and the keyboard coming up behind it — three movements to edit
+ * one field, and the sheet sliding back in afterwards. Lifting the scrim over
+ * the sheet lets the modal simply appear on top of what you were looking at,
+ * and the sheet never moves.
+ */
 .fret-scrim--strong {
+  z-index: 65;
   background: var(--scrimStrong);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
@@ -718,17 +730,57 @@
   border-top: 1px solid var(--edge);
 }
 
-@media (max-width: 640px) {
-  .fret-modal__foot {
-    padding-bottom: max(18px, env(safe-area-inset-bottom));
-  }
-}
-
 .fret-modal__foot .fret-key {
   flex: 1;
   font-size: 13.5px;
   padding: 13px 16px;
 }
+
+/*
+ * The modal, tightened for a phone.
+ *
+ * These come after the rules they override rather than beside the layout
+ * block above: a media query adds no specificity, so an equally specific rule
+ * further down the file wins whatever the viewport is. That is exactly what
+ * happened the first time — the block was written, and did nothing.
+ *
+ * It arrives over the transfers sheet with the keyboard about to take the
+ * lower half of the screen, so every row of padding here is a row of the form
+ * pushed out of sight.
+ */
+@media (max-width: 640px) {
+  .fret-modal__head {
+    padding: 14px 14px 11px;
+  }
+
+  .fret-modal__title {
+    font-size: 15px;
+  }
+
+  .fret-modal__meta {
+    font-size: 8px;
+  }
+
+  .fret-modal__body {
+    padding: 13px 14px;
+    gap: 12px;
+  }
+
+  .fret-modal__field label {
+    margin-bottom: 5px;
+  }
+
+  .fret-modal__foot {
+    padding: 11px 14px;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+
+  .fret-modal__foot .fret-key {
+    font-size: 13px;
+    padding: 12px 14px;
+  }
+}
+
 
 .fret-delete {
   background: var(--body);
@@ -861,25 +913,59 @@
   /* Same 16px floor as every other field, for the same reason. */
   .fret-sheet__search {
     font-size: 16px;
+    padding: 10px 12px;
   }
 
-  /* Nudged up with everything else, so the search field is not the largest
-     text on a screen whose whole job is the list beneath it. */
   .fret-row__title {
-    font-size: 14.5px;
+    font-size: 13px;
   }
 
   .fret-row__meta,
-  .fret-stat__label {
-    font-size: 8.5px;
-  }
-
+  .fret-stat__label,
   .fret-row__countdown,
   .fret-rowaction {
-    font-size: 9px;
+    font-size: 8px;
   }
 
   .fret-tile__unit {
-    font-size: 6.5px;
+    font-size: 6px;
+  }
+
+  /*
+   * Tighter all round. A phone shows fewer rows than a desktop to begin with,
+   * so every pixel of padding costs a fraction of the list — and the list is
+   * the whole reason the sheet exists.
+   */
+  .fret-sheet__body {
+    padding-left: 14px;
+    padding-right: 14px;
+    gap: 10px;
+  }
+
+  .fret-row__main {
+    gap: 9px;
+    padding: 9px 10px;
+  }
+
+  .fret-tile {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .fret-tile__count {
+    font-size: 10px;
+  }
+
+  .fret-rowaction {
+    padding: 11px 4px;
+  }
+
+  .fret-stat {
+    padding: 9px 10px;
+  }
+
+  .fret-stat__value {
+    font-size: 12px;
   }
 }

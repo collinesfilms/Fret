@@ -33,7 +33,6 @@ export function App() {
    * like anything but a mistake.
    */
   const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 640px)').matches)
-  const [sheetWasOpen, setSheetWasOpen] = useState(false)
   const [systemDark, setSystemDark] = useState(
     () => window.matchMedia('(prefers-color-scheme: dark)').matches,
   )
@@ -142,9 +141,16 @@ export function App() {
     window.open(`/${target}`, '_blank', 'noopener,noreferrer')
   }, [])
 
+  /*
+   * The editor opens over the sheet rather than in place of it.
+   *
+   * On a phone the sheet used to be dismissed first, because the modal's
+   * scrim sat underneath it. That made editing one field cost three
+   * movements — the sheet leaving, the modal arriving, the keyboard rising —
+   * and a fourth when the sheet slid back afterwards. The scrim now covers
+   * the sheet, so nothing has to move out of the way.
+   */
   const openEditor = (transfer: TransferSummary, action: EngagedAction['action']) => {
-    setSheetWasOpen(sheetOpen)
-    if (narrow) setSheetOpen(false)
     setEngaged({ id: transfer.id, action })
     setEditing(transfer)
   }
@@ -152,7 +158,6 @@ export function App() {
   const closeEditor = () => {
     setEditing(null)
     setEngaged(null)
-    if (narrow && sheetWasOpen) setSheetOpen(true)
   }
 
   const signOut = async () => {

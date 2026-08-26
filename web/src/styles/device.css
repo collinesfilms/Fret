@@ -597,6 +597,25 @@
  * accident.
  */
 @media (max-width: 640px) {
+  /* The whole object comes in a little. A phone holds the device at arm's
+     reach in a much narrower frame, and the desktop paddings read as slack. */
+  .fret-panel {
+    padding: 14px;
+    gap: 13px;
+    border-radius: 18px;
+  }
+
+  .fret-key {
+    font-size: 13px;
+    padding: 12px 14px;
+    border-radius: 11px;
+  }
+
+  .fret-actions__primary {
+    font-size: 13px;
+    padding: 12px 14px;
+  }
+
   .fret-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
