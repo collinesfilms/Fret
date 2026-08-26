@@ -281,9 +281,9 @@ function SettingsPopover({
           onChange={(defaultExpiry) => save({ defaultExpiry })}
           label={t('prefs.expiry')}
           segments={[
-            { value: '24h', label: '24h' },
-            { value: '7d', label: '7d' },
-            { value: '30d', label: '30d' },
+            { value: '24h', label: t('expiry.opt24h') },
+            { value: '7d', label: t('expiry.opt7d') },
+            { value: '30d', label: t('expiry.opt30d') },
             { value: 'never', label: '∞' },
           ]}
         />
@@ -303,7 +303,7 @@ function SettingsPopover({
           <div className="fret-popover__label" style={{ marginBottom: 4 }}>
             {t('admin.bucket')}
           </div>
-          <div className="fret-admin__value">{formatBytes(stats.bucketBytes)}</div>
+          <div className="fret-admin__value">{formatBytes(locale, stats.bucketBytes)}</div>
           <div className="fret-admin__sub">
             {counted(locale, stats.accounts, 'admin.account', 'admin.accountPlural')} ·{' '}
             {counted(locale, stats.bucketObjects, 'admin.object', 'admin.objectPlural')}

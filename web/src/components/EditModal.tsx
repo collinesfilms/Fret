@@ -8,8 +8,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { api, ApiError, type Expiry, type TransferSummary } from '../lib/api'
-import { filterSlug, formatBytes, plural } from '../lib/format'
-import { translate, type Locale, type StringKey } from '../lib/i18n'
+import { filterSlug, formatBytes } from '../lib/format'
+import { counted, fileCount, translate, type Locale, type StringKey } from '../lib/i18n'
 import { Consequence, Field, notACredential, Segmented } from './Controls'
 import { Key, Morph } from './Device'
 
@@ -99,13 +99,13 @@ export function EditModal({
           <div>
             <div className="fret-modal__title">{t('edit.title')}</div>
             <div className="fret-modal__meta">
-              {plural(transfer.fileCount, 'file', 'files')} · {formatBytes(transfer.totalBytes)} ·{' '}
+              {fileCount(locale, transfer.fileCount)} · {formatBytes(locale, transfer.totalBytes)} ·{' '}
               {transfer.downloads === 0
                 ? t('sheet.noDownloads')
-                : t('sheet.downloads', { count: transfer.downloads })}
+                : counted(locale, transfer.downloads, 'sheet.download', 'sheet.downloads')}
             </div>
           </div>
-          <button type="button" className="fret-close" onClick={onClose} aria-label="Close">
+          <button type="button" className="fret-close" onClick={onClose} aria-label={t('action.close')}>
             ×
           </button>
         </div>
@@ -183,10 +183,10 @@ export function EditModal({
               onChange={setExpiry}
               label={t('settings.expires')}
               segments={[
-                { value: '24h', label: '24h' },
-                { value: '7d', label: '7d' },
-                { value: '30d', label: '30d' },
-                { value: 'never', label: 'never' },
+                { value: '24h', label: t('expiry.opt24h') },
+                { value: '7d', label: t('expiry.opt7d') },
+                { value: '30d', label: t('expiry.opt30d') },
+                { value: 'never', label: t('expiry.optNever') },
               ]}
             />
           </div>

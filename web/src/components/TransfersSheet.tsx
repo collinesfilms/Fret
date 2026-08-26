@@ -5,8 +5,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, type TransferFile, type TransferSummary } from '../lib/api'
-import { countdown, formatBytes, plural } from '../lib/format'
-import { translate, type Locale, type StringKey } from '../lib/i18n'
+import { countdown, formatBytes } from '../lib/format'
+import { counted, translate, type Locale, type StringKey } from '../lib/i18n'
 import { Grow, Segmented, useGrabToDismiss } from './Controls'
 import { FileList, Morph } from './Device'
 
@@ -93,10 +93,10 @@ export function TransfersSheet({
         return false
       }
       if (filter === 'locked') return transfer.hasPassword
-      if (filter === 'expiring') return countdown(transfer.expiresAt, now).soon
+      if (filter === 'expiring') return countdown(locale, transfer.expiresAt, now).soon
       return true
     })
-  }, [transfers, query, filter, now])
+  }, [transfers, query, filter, now, locale])
 
   /*
    * Rows that have left the list but not yet the screen.
@@ -162,8 +162,8 @@ export function TransfersSheet({
   }, [visible, departing])
 
   const expiringCount = useMemo(
-    () => transfers.filter((transfer) => countdown(transfer.expiresAt, now).soon).length,
-    [transfers, now],
+    () => transfers.filter((transfer) => countdown(locale, transfer.expiresAt, now).soon).length,
+    [transfers, now, locale],
   )
 
   const filtered = query.trim() !== '' || filter !== 'all'
@@ -198,8 +198,8 @@ export function TransfersSheet({
               <div className="fret-sheet__title">{t('sheet.title')}</div>
               <div className="fret-sheet__subtitle">
                 {t('sheet.subtitle', {
-                  links: plural(transfers.length, 'link', 'links'),
-                  size: formatBytes(storageUsed),
+                  links: counted(locale, transfers.length, 'link.count', 'link.countPlural'),
+                  size: formatBytes(locale, storageUsed),
                 })}
               </div>
             </div>
@@ -235,14 +235,16 @@ export function TransfersSheet({
 
           <div className="fret-stats">
             <Stat value={String(transfers.length)} label={t('sheet.statActive')} />
-            <Stat value={formatBytes(storageUsed)} label={t('sheet.statStorage')} />
+            <Stat value={formatBytes(locale, storageUsed)} label={t('sheet.statStorage')} />
             <Stat value={String(expiringCount)} label={t('sheet.statExpiring')} />
           </div>
 
           <div className="fret-listhead">
             {filtered
-              ? t('sheet.results', { count: visible.length })
-              : t('sheet.newestFirst', { links: plural(transfers.length, 'link', 'links') })}
+              ? counted(locale, visible.length, 'sheet.result', 'sheet.results')
+              : t('sheet.newestFirst', {
+                  links: counted(locale, transfers.length, 'link.count', 'link.countPlural'),
+                })}
           </div>
 
           {visible.length === 0 ? (
@@ -317,7 +319,7 @@ function Row({
 }) {
   const t = (key: StringKey, vars?: Record<string, string | number>) =>
     translate(locale, key, vars)
-  const expiry = countdown(transfer.expiresAt)
+  const expiry = countdown(locale, transfer.expiresAt)
   const tab = leaving ? -1 : interactive ? 0 : -1
 
   /*
@@ -397,8 +399,9 @@ function Row({
           <span className="fret-row__meta">
             <span className="fret-row__slug">{transfer.slug}</span>
             {' · '}
-            {formatBytes(transfer.totalBytes)}
-            {transfer.downloads > 0 && ` · ${t('sheet.downloads', { count: transfer.downloads })}`}
+            {formatBytes(locale, transfer.totalBytes)}
+            {transfer.downloads > 0 &&
+              ` · ${counted(locale, transfer.downloads, 'sheet.download', 'sheet.downloads')}`}
           </span>
         </span>
 
@@ -429,7 +432,7 @@ function Row({
         {files === null ? (
           <div className="fret-rowfiles__waiting">{t('sheet.loadingFiles')}</div>
         ) : (
-          <FileList files={files} plain cap={168} />
+          <FileList files={files} locale={locale} plain cap={168} />
         )}
         <div className="fret-rowactions__strip">
           <Action

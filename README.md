@@ -274,7 +274,7 @@ annotated set. The ones worth understanding:
 | --- | --- | --- |
 | `FRET_APP_NAME` | `Fret` | Shown in the interface and the browser tab. Rename it freely. |
 | `FRET_PUBLIC_URL` | — | The origin recipients see. Used to build share links and the default OIDC redirect. |
-| `FRET_LOCALE` | `en` | `en` or `fr`. Instance-wide. |
+| `FRET_LOCALE` | `en` | `en` or `fr`. Instance-wide, not per-user. Case and region are ignored, so `FR` and `fr-CA` both mean French; anything Fret has no catalog for falls back to English. |
 | `FRET_SESSION_SECRET` | — | **Required.** 32+ random bytes. Fret refuses to start without it. |
 | `FRET_S3_PUBLIC_ENDPOINT` | — | The storage address **the browser** can reach. |
 | `FRET_S3_INTERNAL_ENDPOINT` | = public | The storage address **the server** uses. See below. |
@@ -516,6 +516,34 @@ web/                React + TypeScript frontend
 go run ./cmd/fret-demo          # terminal 1
 cd web && npm run screenshots   # terminal 2
 ```
+
+### Languages
+
+Fret ships English and French. Both live in
+[`web/src/lib/i18n.ts`](web/src/lib/i18n.ts) — one file, two flat tables of
+strings, no framework and no extraction step. Editing a wording means editing a
+value; adding a language means adding a table beside them and an arm to
+`resolveLocale`.
+
+English is the source of truth: its keys generate the type the other catalogs
+are checked against, so a missing or misspelt key fails `npm run build` rather
+than falling back silently at run time.
+
+The strings are only half of it. A translation breaks a layout by being longer
+than the English the box was drawn around — French `fichiers` does not fit a
+tile sized for `files` — and nothing throws when it happens: the text clips, or
+it spills over a border. So there is a check that measures every string against
+the width it actually gets, in a real browser, at both widths:
+
+```sh
+go run ./cmd/fret-demo          # terminal 1
+cd web && npm run audit:i18n    # terminal 2
+```
+
+It reads the boxes from the running application, measures every catalog against
+them, and exits non-zero on anything that does not fit, naming the string and
+the two numbers. Run it after editing a catalog, and against a new language
+before shipping one.
 
 ---
 

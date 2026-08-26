@@ -191,6 +191,63 @@ first and the lamp closes up behind it. Two delays in `device.css`,
 itself never moves in either direction: the group is centred, so the box's
 centre is the key's centre at any width.
 
+## Language
+
+Every string is in `web/src/lib/i18n.ts`, English and French in two flat
+tables. `en` is typed `as const` and its keys generate `StringKey`, so the
+French table is a `Record<StringKey, string>` and a key that is missing or
+misspelt fails `npm run build`. There is no extraction step and no framework;
+`FRET_LOCALE` picks the table, instance-wide.
+
+**`format.ts` is translated too, and that is the part that gets missed.** It
+builds the mono values — `expires in 3d`, `45 s remaining`, `1.25 GB` — and
+they read as machine output rather than as copy, so they sat in English under a
+French interface for a while without looking like a bug. Everything there takes
+a locale and gets its words from the catalog. If you add a value to that file
+that contains a word, the word belongs in `i18n.ts`.
+
+French is not a gloss of the English:
+
+- **Octets, not bytes.** `Go` `Mo` `Ko` `o`, and a decimal comma — `1,25 Go` is
+  what a French file manager shows.
+- **Agreement.** `1 fichier · prêt` but `4 fichiers · prêts`, so anything
+  carrying a `{count}` has a singular key and a plural one. `counted` picks
+  between them; `agreeing` does the same where the count arrives already
+  rendered inside the placeholder.
+- **`\u00A0` before `?` and between a figure and its unit**, written as an
+  escape rather than typed, so it is visible to whoever edits the line next.
+
+**Some strings live in boxes with a fixed width.** The file tile in the
+transfers list is 41px square — 36px on a phone — and `fichiers` does not fit a
+box drawn around `files`, which is why French says `fich.`. The same pressure
+put `Lien copié` on the copy key rather than `Copié dans le presse-papiers`:
+the literal is 28 characters into a key that holds about 18, and it lands
+mid-exchange with `Copier le lien`, where an ellipsis reads as a stumble.
+
+Nothing throws when a translation is too long. It clips, or it paints over a
+border, and a screenshot is the only way you find out. So:
+
+```sh
+go run ./cmd/fret-demo          # terminal 1 — any locale
+cd web && npm run audit:i18n    # terminal 2
+```
+
+`web/scripts/audit-i18n.mjs` measures every string that lands in a constrained
+box against the width it actually gets, and exits non-zero on anything over.
+The boxes are listed at the top of that file — a fixed width, or a row divided
+between N controls — and each one names the strings that land in it. Their
+widths and fonts are read from the running application rather than restated in
+the script, so the numbers cannot drift from the stylesheet; the catalogs are
+then measured against them in the same browser, in every language at once.
+
+It takes about a minute, and it is the reason `sheet.files` says `fich.`:
+`fichiers` measures 40px into a tile that gives it 34 on a phone.
+
+Only constrained boxes are checked, and only catalog strings. Most strings sit
+on a line as wide as the panel and can take whatever a language gives them, and
+a filename is not a translation at all — it is as long as somebody made it, and
+the row is built to truncate one.
+
 ## An effect that cancels its own timer
 
 This one has now cost three separate bugs, in the transfers list, the morphing

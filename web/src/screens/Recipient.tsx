@@ -167,7 +167,7 @@ export function Recipient({
 function ReadyView({ transfer, locale }: { transfer: PublicTransfer; locale: Locale }) {
   const t = (key: StringKey, vars?: Record<string, string | number>) =>
     translate(locale, key, vars)
-  const expiry = countdown(transfer.expiresAt)
+  const expiry = countdown(locale, transfer.expiresAt)
   const count = fileCount(locale, transfer.files.length)
   const single = transfer.files.length === 1
 
@@ -200,13 +200,13 @@ function ReadyView({ transfer, locale }: { transfer: PublicTransfer; locale: Loc
           A single file goes straight to storage over a presigned URL, so the
           bytes never pass through the Fret server.
         */}
-        <FileList files={transfer.files} cap={260}>
+        <FileList files={transfer.files} locale={locale} cap={260}>
           {(file) =>
             single ? null : (
               <a
                 href={fileUrl(transfer.slug, file.id)}
                 className="fret-dl"
-                aria-label={`Download ${file.name}`}
+                aria-label={t('action.download', { name: file.name })}
               >
                 ↓
               </a>
@@ -229,8 +229,8 @@ function ReadyView({ transfer, locale }: { transfer: PublicTransfer; locale: Loc
       >
         <span className="fret-key__label">
           {single
-            ? t('recipient.downloadOne', { size: formatBytes(transfer.totalBytes) })
-            : t('recipient.downloadAll', { size: formatBytes(transfer.totalBytes) })}
+            ? t('recipient.downloadOne', { size: formatBytes(locale, transfer.totalBytes) })
+            : t('recipient.downloadAll', { size: formatBytes(locale, transfer.totalBytes) })}
         </span>
       </a>
     </>

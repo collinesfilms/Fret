@@ -58,7 +58,7 @@ func Load() (*Config, error) {
 	c := &Config{
 		AppName:        env("FRET_APP_NAME", "Fret"),
 		PublicURL:      strings.TrimRight(env("FRET_PUBLIC_URL", "http://localhost:8080"), "/"),
-		Locale:         env("FRET_LOCALE", "en"),
+		Locale:         Locale(env("FRET_LOCALE", "en")),
 		ListenAddr:     env("FRET_LISTEN", ":8080"),
 		S3Region:       env("FRET_S3_REGION", "us-east-1"),
 		S3Bucket:       env("FRET_S3_BUCKET", ""),
@@ -124,6 +124,25 @@ func (c *Config) ServerEndpoint() string {
 		return c.S3Internal
 	}
 	return c.S3Public
+}
+
+// Locales the interface ships. A language Fret has no catalog for would render
+// as English anyway — the frontend falls back per string — so it is rejected
+// here instead, where the value came from and the operator can see it named.
+var locales = map[string]bool{"en": true, "fr": true}
+
+// Locale normalises FRET_LOCALE. It is set by hand in a .env file, so `FR`,
+// `fr_FR` and `fr-CA` all mean French and all resolve to it rather than
+// silently falling back to English on a capital letter.
+func Locale(v string) string {
+	v = strings.ToLower(strings.TrimSpace(v))
+	if i := strings.IndexAny(v, "-_."); i > 0 {
+		v = v[:i]
+	}
+	if !locales[v] {
+		return "en"
+	}
+	return v
 }
 
 func env(k, def string) string {

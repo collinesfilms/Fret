@@ -167,6 +167,17 @@ export function App() {
     if (name) document.title = name
   }, [me, config])
 
+  /*
+   * The document's language, which the markup cannot know: `index.html` is a
+   * static file and the locale arrives from the server. It is what decides
+   * whether a screen reader pronounces this interface as French, and whether
+   * the browser offers to translate a page that is already in the reader's
+   * language.
+   */
+  useEffect(() => {
+    document.documentElement.lang = locale
+  }, [locale])
+
   const refreshTransfers = useCallback(() => {
     if (session.kind !== 'in') return
     api

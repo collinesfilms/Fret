@@ -17,6 +17,7 @@ import {
 } from 'react'
 
 import { formatBytes } from '../lib/format'
+import type { Locale } from '../lib/i18n'
 
 export function Panel({
   children,
@@ -266,11 +267,14 @@ export function Strip({
  */
 export function FileList({
   files,
+  locale,
   plain,
   cap,
   children,
 }: {
   files: { id: string; name: string; size: number }[]
+  /** Sizes are machine values, and a machine value still has a language. */
+  locale: Locale
   /** On the body material rather than the readout screen. */
   plain?: boolean
   /** Overrides the height it stops growing at. */
@@ -286,7 +290,7 @@ export function FileList({
       {files.map((file) => (
         <div className="fret-filelist__row" key={file.id}>
           <span className="fret-filelist__name">{file.name}</span>
-          <span className="fret-filelist__size">{formatBytes(file.size)}</span>
+          <span className="fret-filelist__size">{formatBytes(locale, file.size)}</span>
           {children?.(file)}
         </div>
       ))}

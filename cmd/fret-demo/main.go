@@ -46,6 +46,15 @@ func main() {
 	}
 }
 
+// demoLocale lets the demo be started in any language the interface ships, so
+// a translation can be looked at in the real application rather than read as a
+// table of strings:
+//
+//	FRET_LOCALE=fr go run ./cmd/fret-demo
+func demoLocale() string {
+	return config.Locale(os.Getenv("FRET_LOCALE"))
+}
+
 func run() error {
 	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn}))
 	ctx := context.Background()
@@ -71,7 +80,7 @@ func run() error {
 	defer database.Close()
 
 	cfg := &config.Config{
-		AppName: "Fret", PublicURL: "http://" + appAddr, Locale: "en",
+		AppName: "Fret", PublicURL: "http://" + appAddr, Locale: demoLocale(),
 		ListenAddr: appAddr,
 		S3Public:   s3URL, S3Internal: s3URL,
 		S3Region: "eu-west-3", S3Bucket: "fret",

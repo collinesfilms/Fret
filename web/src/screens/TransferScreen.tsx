@@ -24,7 +24,7 @@ import {
 import { FileList, Key, LinkReadout, Morph, Panel, Screen, Strip, Vent } from '../components/Device'
 import { api, ApiError, type Expiry, type Me, type Resumable, type Transfer } from '../lib/api'
 import { filterSlug, formatBytes, rate, remaining, splitBytes } from '../lib/format'
-import { fileCount, translate, type Locale, type StringKey } from '../lib/i18n'
+import { agreeing, fileCount, translate, type Locale, type StringKey } from '../lib/i18n'
 import { CancelledError, matchResumable, readDrop, Upload, type UploadProgress } from '../lib/upload'
 
 type Phase = 'empty' | 'uploading' | 'ready' | 'failed'
@@ -377,7 +377,7 @@ export function TransferScreen({
   })()
 
   const files = transfer?.files ?? []
-  const [totalFigure, totalUnit] = splitBytes(transfer?.totalBytes ?? 0)
+  const [totalFigure, totalUnit] = splitBytes(locale, transfer?.totalBytes ?? 0)
 
   return (
     <div className="fret-stage">
@@ -471,19 +471,21 @@ export function TransferScreen({
                 off the bottom of the device — which is the one part of this
                 screen that has to stay where it is while bytes are moving.
               */}
-              <FileList files={files} />
+              <FileList files={files} locale={locale} />
 
               <div className="fret-readout">
                 {uploading ? (
                   <>
                     <span className="fret-readout__value">{percent}</span>
                     <span className="fret-readout__unit">
-                      % of {formatBytes(transfer?.totalBytes ?? 0)}
+                      {t('upload.percentOf', {
+                        size: formatBytes(locale, transfer?.totalBytes ?? 0),
+                      })}
                     </span>
                     <span className="fret-readout__right">
                       {progress?.bytesPerSecond
-                        ? `${rate(progress.bytesPerSecond)} · ${remaining(progress.secondsRemaining)}`
-                        : remaining(progress?.secondsRemaining ?? null)}
+                        ? `${rate(locale, progress.bytesPerSecond)} · ${remaining(locale, progress.secondsRemaining)}`
+                        : remaining(locale, progress?.secondsRemaining ?? null)}
                     </span>
                   </>
                 ) : (
@@ -491,7 +493,9 @@ export function TransferScreen({
                     <span className="fret-readout__value">{totalFigure}</span>
                     <span className="fret-readout__unit">{totalUnit}</span>
                     <span className="fret-readout__right">
-                      {t('app.readyCount', { count: fileCount(locale, files.length) })}
+                      {t(agreeing(files.length, 'app.readyCount', 'app.readyCountPlural'), {
+                        count: fileCount(locale, files.length),
+                      })}
                     </span>
                   </>
                 )}
@@ -623,10 +627,10 @@ export function TransferScreen({
                 label={t('settings.expires')}
                 committed={confirmed === 'expiry'}
                 segments={[
-                  { value: '24h', label: '24h' },
-                  { value: '7d', label: '7d' },
-                  { value: '30d', label: '30d' },
-                  { value: 'never', label: 'never' },
+                  { value: '24h', label: t('expiry.opt24h') },
+                  { value: '7d', label: t('expiry.opt7d') },
+                  { value: '30d', label: t('expiry.opt30d') },
+                  { value: 'never', label: t('expiry.optNever') },
                 ]}
               />
             </SettingsRow>

@@ -12,8 +12,8 @@
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import type { TransferSummary } from '../lib/api'
-import { formatBytes, plural } from '../lib/format'
-import { translate, type Locale, type StringKey } from '../lib/i18n'
+import { formatBytes } from '../lib/format'
+import { fileCount, translate, type Locale, type StringKey } from '../lib/i18n'
 import { Key } from './Device'
 
 export function DeleteModal({
@@ -73,8 +73,8 @@ export function DeleteModal({
           <div className="fret-ask__subject">
             <span className="fret-ask__name">{transfer.firstFile || transfer.slug}</span>
             <span className="fret-ask__meta">
-              {transfer.slug} · {plural(transfer.fileCount, 'file', 'files')} ·{' '}
-              {formatBytes(transfer.totalBytes)}
+              {transfer.slug} · {fileCount(locale, transfer.fileCount)} ·{' '}
+              {formatBytes(locale, transfer.totalBytes)}
             </span>
           </div>
 
