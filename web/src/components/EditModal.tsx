@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from 'react'
 import { api, ApiError, type Expiry, type TransferSummary } from '../lib/api'
 import { filterSlug, formatBytes, plural } from '../lib/format'
 import { translate, type Locale, type StringKey } from '../lib/i18n'
-import { Consequence, Field, Segmented } from './Controls'
+import { Consequence, Field, notACredential, Segmented } from './Controls'
 import { Key, Morph } from './Device'
 
 interface EditModalProps {
@@ -184,10 +184,11 @@ export function EditModal({
           </div>
 
           <div className="fret-modal__field">
-            <label htmlFor="edit-password">{t('settings.password')}</label>
+            <label htmlFor="edit-secret">{t('settings.password')}</label>
             <Field
-              id="edit-password"
+              id="edit-secret"
               type="password"
+              {...notACredential}
               value={password}
               placeholder={
                 transfer.hasPassword ? t('settings.passwordKept') : t('settings.passwordNone')

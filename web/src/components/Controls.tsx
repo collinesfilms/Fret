@@ -17,6 +17,34 @@ export function SettingsRow({
   )
 }
 
+/**
+ * Attributes that keep a transfer's password out of the operating system's
+ * keychain.
+ *
+ * It is not a credential. Nobody signs in with it — it is a secret you set on
+ * a link and then send to somebody, and it lives on the transfer rather than
+ * on the account. But it is masked, and `type="password"` is the only honest
+ * way to mask a field, so every password manager on the machine assumes it is
+ * a login and offers to fill the account password instead. On a phone that
+ * assumption is worse than wrong: iOS puts the whole keychain sheet over the
+ * keyboard, and both of these fields sit directly under a text input, which
+ * is precisely the shape Safari reads as username-then-password.
+ *
+ * `autocomplete="off"` is specified to be ignored on password fields, so it
+ * buys nothing. `new-password` is the documented way to say this one is not
+ * an existing credential; the rest are what the common managers watch for.
+ * The name matters too — anything containing "password" is a heuristic all of
+ * them match on.
+ */
+export const notACredential = {
+  autoComplete: 'new-password',
+  name: 'fret-transfer-secret',
+  'data-1p-ignore': '',
+  'data-lpignore': 'true',
+  'data-bwignore': 'true',
+  'data-form-type': 'other',
+} as const
+
 export function Field({
   error,
   ...rest

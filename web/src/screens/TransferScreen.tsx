@@ -13,7 +13,14 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Grow, LiveField, Segmented, SettingsRow, Tray } from '../components/Controls'
+import {
+  Grow,
+  LiveField,
+  notACredential,
+  Segmented,
+  SettingsRow,
+  Tray,
+} from '../components/Controls'
 import { FileList, Key, LinkReadout, Morph, Panel, Screen, Strip, Vent } from '../components/Device'
 import { api, ApiError, type Expiry, type Me, type Resumable, type Transfer } from '../lib/api'
 import { filterSlug, formatBytes, rate, remaining, splitBytes } from '../lib/format'
@@ -583,6 +590,7 @@ export function TransferScreen({
             <SettingsRow label={t('settings.password')}>
               <LiveField
                 type="password"
+                {...notACredential}
                 value={settings.password}
                 placeholder={t('settings.passwordNone')}
                 committed={confirmed === 'password'}
