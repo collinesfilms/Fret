@@ -139,23 +139,35 @@
   --durDrain: 0.7s;
 
   /*
-   * A label changing inside a key: the spread from the first character to the
-   * last. Fixed whatever the label's length, so a short word ripples and a
-   * long one reads as a wipe, and both take the same time.
+   * A label changing inside a key.
    *
-   * There is no second token for how far the incoming line trails the
-   * outgoing one, because it is not a free choice. The two lines are centred
-   * independently, so a character halfway through one sits nowhere near the
-   * halfway character of the other — overlap them at all and the key reads
+   *   --durCascade  the spread from the first character to the last. Fixed
+   *                 whatever the label's length, so a short word ripples and
+   *                 a long one reads as a wipe, and both take the same time.
+   *   --durSettle   the label box changing width, which is what carries the
+   *                 lamp beside it to its new place.
+   *
+   * There is no token for how far the incoming line trails the outgoing one,
+   * because it is not a free choice. The two lines are centred independently,
+   * so a character halfway through one sits nowhere near the halfway
+   * character of the other — overlap them at all and the key reads
    * "CopieCbpy link" for a tenth of a second, which is the glitch this was
    * meant to fix. The arrival starts exactly where the departure ends, and
    * device.css computes that rather than naming it.
    *
    * Leaving is --durPress a character, arriving is --durFast: a thing leaving
-   * is faster than the same thing arriving, here as everywhere else. The whole
-   * exchange comes to --durTray, which MORPH_MS in Device.tsx has to outlast.
+   * is faster than the same thing arriving, here as everywhere else.
    */
   --durCascade: 0.11s;
+  --durSettle: 0.2s;
+
+  /*
+   * One whole exchange, first character of the old line to last of the new.
+   * Derived rather than declared, so it cannot drift out of agreement with
+   * the four durations it is made of — device.css waits exactly this long
+   * before letting the box shrink.
+   */
+  --durExchange: calc(2 * var(--durCascade) + var(--durPress) + var(--durFast));
 }
 
 :root[data-theme='dark'] {

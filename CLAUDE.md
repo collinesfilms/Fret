@@ -172,7 +172,24 @@ a change to either duration.
 and 1 at the last); the spread is a fixed duration, so a three-letter word
 ripples and a long one wipes and both take the same time. The split spans are
 `aria-hidden` with the whole line given once in a `.fret-sr` sibling: a screen
-reader handed a span per character reads it out letter by letter.
+reader handed a span per character reads it out letter by letter. The split
+has to be held for the *whole* exchange, not just until the old line has gone
+— it carries the incoming cascade too, and dropping it early puts the back
+half of the new word on screen in a single frame.
+
+**The lamp beside a label is that label's width.** A key lays its lamp and its
+label out as one centred group, so the lamp's distance from the key's edge is
+a function of the box and nothing else — which is why `Morph` measures each
+line on a hidden twin and sets the width in pixels: `auto` cannot be
+interpolated. And the lamp must never cross text that is still on screen, so
+the move is sequenced against the cascade rather than run alongside it. Going
+*longer*, the lamp moves out first into space the short line was not using and
+the exchange follows it into the room it made. Going *shorter*, the space the
+lamp wants is where the outgoing line is still standing, so the exchange goes
+first and the lamp closes up behind it. Two delays in `device.css`,
+`--fret-morph-lead` and `--fret-morph-hold`, are the whole mechanism. The text
+itself never moves in either direction: the group is centred, so the box's
+centre is the key's centre at any width.
 
 ## An effect that cancels its own timer
 

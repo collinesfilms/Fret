@@ -6,12 +6,14 @@
  */
 
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
   type ReactNode,
+  type RefObject,
 } from 'react'
 
 import { formatBytes } from '../lib/format'
@@ -349,14 +351,30 @@ export function Scroller({
 }
 
 /**
- * How long an outgoing line stays in the DOM.
+ * How long an exchange is held open: both lines split into characters, the
+ * mode on the box, and the outgoing line still in the DOM.
  *
- * Only its own half of the exchange — --durCascade + --durPress, 0.11 + 0.12
- * — since the incoming line is in flow and stays whether this is here or not.
- * The margin is there so the last character is never cut off by a re-render
- * landing on the frame it finishes.
+ * It has to outlast the last thing that moves, and which thing that is
+ * depends on the direction — a grow leads with --durSettle and then runs the
+ * exchange, a shrink runs the exchange and then spends --durSettle closing
+ * up. Either way it is one settle plus one exchange; only a label that has
+ * not changed width does without.
+ *
+ * Timing this to the outgoing line alone was wrong, and wrong in a way that
+ * looked like a rendering bug rather than a duration: the split is what
+ * carries the incoming cascade too, so dropping it the moment the old line
+ * had gone put the rest of the new one on screen in a single frame. The word
+ * wrote three letters and then simply appeared.
+ *
+ * The numbers are the durations in tokens.css — --durSettle, --durCascade
+ * twice, --durPress, --durFast — plus a frame or two so the last character is
+ * never cut off by a re-render landing as it finishes.
  */
-const MORPH_MS = 280
+const EXCHANGE_MS = 110 + 120 + 110 + 180
+
+function morphMs(mode: Exchange): number {
+  return (mode === 'level' ? 0 : 200) + EXCHANGE_MS + 60
+}
 
 /**
  * Splits a line into the characters that will fade one after another.
@@ -426,19 +444,39 @@ export function Morph({ children }: { children: string }) {
    * animation ends at zero opacity — so the only symptom is one more hidden
    * copy of every label the key has ever shown.
    */
+  const arriving = pair.leaving !== null
+  const sizer = useRef<HTMLSpanElement>(null)
+  const box = useLabelBox(pair.current, sizer)
+
   useEffect(() => {
     if (pair.leaving === null) return
     window.clearTimeout(timer.current)
     timer.current = window.setTimeout(
       () => setPair((previous) => ({ ...previous, leaving: null })),
-      MORPH_MS,
+      morphMs(box.mode),
     )
-  }, [pair.leaving])
+    // Keyed on the mode as well as the line. The mode is settled by a layout
+    // effect one level down, so on the render that starts an exchange it can
+    // still be the previous one's — and a grow read as a level would take the
+    // outgoing line out of the DOM a --durSettle before it has finished
+    // leaving. Re-arming when it lands costs a frame and nothing else.
+  }, [pair.leaving, box.mode])
 
-  const arriving = pair.leaving !== null
+  const classes = [
+    'fret-morph',
+    arriving && 'fret-morph--exchanging',
+    arriving && box.mode !== 'level' && `fret-morph--${box.mode}`,
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
-    <span className="fret-morph">
+    <span className={classes} style={box.width ? { width: box.width } : undefined}>
+      {/* Not the label, just its width. Hidden from paint and from the
+          accessibility tree, but laid out, which is the whole point. */}
+      <span className="fret-morph__sizer" aria-hidden="true" ref={sizer}>
+        {pair.current}
+      </span>
       {pair.leaving !== null && (
         <Cascade className="fret-morph__out" key={pair.leaving} line={pair.leaving} />
       )}
@@ -448,11 +486,84 @@ export function Morph({ children }: { children: string }) {
       >
         {/* Only split while something is actually animating. The rest of the
             time the label is one text node, which is what it should be. */}
-        {arriving ? <Characters line={pair.current} /> : pair.current}
+        {/* Keyed on the line: without it React keeps the character spans and
+            only swaps their text, so a second change arriving before the
+            first has finished inherits the old animation's progress — the new
+            word turns up already written, over a line still fading out. */}
+        {arriving ? <Characters key={pair.current} line={pair.current} /> : pair.current}
       </span>
       <span className="fret-sr">{pair.current}</span>
     </span>
   )
+}
+
+/**
+ * Which way the label box is about to move, which decides when it moves.
+ *
+ * The lamp beside the label is carried by this box's width and by nothing
+ * else, so a label that changes length is a lamp that has to travel — and it
+ * must not travel across text that is still on screen. Growing, the space it
+ * wants is empty, so it goes first and the exchange follows it. Shrinking,
+ * the space it wants is where the outgoing line is still standing, so the
+ * exchange goes first and the lamp closes up behind it. device.css turns
+ * these three words into the two delays that arrange it.
+ */
+type Exchange = 'level' | 'grow' | 'shrink'
+
+/**
+ * The width of the line the key is showing, and which way it just went.
+ *
+ * The box needs a real number rather than `auto` for two reasons: `auto` is
+ * not interpolable, so the lamp would teleport rather than travel, and the
+ * leaving line is laid out inside this box — sized by content, a long label
+ * reverting to a short one squeezed "Copied to clipboard" into 61px and
+ * clipped it while it was still fading.
+ *
+ * Measuring happens on a hidden twin rather than on the box, since a box
+ * carrying an explicit width can no longer report what its content would like
+ * to be. `max-width: 100%` still caps the result, so a label too long for its
+ * key truncates the way it always did.
+ */
+function useLabelBox(line: string, sizer: RefObject<HTMLElement | null>) {
+  const [box, setBox] = useState<{ width: number; mode: Exchange }>({ width: 0, mode: 'level' })
+
+  const measure = useCallback(() => {
+    // Rounded up, not down. A rect is fractional and offsetWidth is not, so a
+    // line that wants 129.06px measures at 129 and is then handed a 129px box
+    // — which it overflows by six hundredths of a pixel, and text-overflow
+    // does not care how little: the key draws an ellipsis beside a label that
+    // fits.
+    const width = Math.ceil(sizer.current?.getBoundingClientRect().width ?? 0)
+    if (width === 0) return
+    setBox((previous) => {
+      const mode: Exchange =
+        previous.width === 0 || previous.width === width
+          ? 'level'
+          : width > previous.width
+            ? 'grow'
+            : 'shrink'
+      if (previous.width === width && previous.mode === mode) return previous
+      return { width, mode }
+    })
+  }, [sizer])
+
+  // Only ever on a change of line, so the mode stays put for the length of the
+  // exchange it describes. Re-running it while the cascade is in flight would
+  // rewrite animation-delay underneath running animations, and they would
+  // jump to wherever the new delay says they should be by now.
+  useLayoutEffect(measure, [line, measure])
+
+  // A line measured before its face has loaded is measured in the fallback,
+  // and every label on the page is then a few pixels out.
+  useEffect(() => {
+    let live = true
+    void document.fonts?.ready.then(() => live && measure())
+    return () => {
+      live = false
+    }
+  }, [measure])
+
+  return box
 }
 
 function Cascade({ className, line }: { className: string; line: string }) {

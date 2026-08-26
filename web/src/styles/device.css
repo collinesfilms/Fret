@@ -514,6 +514,71 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  /*
+   * This box is also the lamp's position.
+   *
+   * A key lays its lamp and its label out as one centred group, so the lamp
+   * sits at a distance from the key's edge that depends on nothing but how
+   * wide this box is. Morph measures each line and sets that width in pixels
+   * — unlike `auto` it can be interpolated, and interpolating it is what
+   * carries the lamp. The text itself never moves: the group is centred, so
+   * the box's own centre is the key's centre at any width.
+   *
+   * The two custom properties below are the choreography, and they are the
+   * point of the whole arrangement. The lamp must never travel across text
+   * that is still on screen, and which side it would cross depends on which
+   * way the label is going:
+   *
+   *   growing — the lamp moves out first, into space the short old line was
+   *             never using, and the exchange follows it into the room it
+   *             made. So the box widens at once and the cascade waits one
+   *             --durSettle (--fret-morph-lead, below).
+   *
+   *   shrinking — the space the lamp wants is space the long old line is
+   *             still standing in. So the exchange goes first and the box
+   *             waits a whole --durExchange before closing up
+   *             (--fret-morph-hold), by which time there is nothing left for
+   *             the lamp to walk through.
+   *
+   * A label that changes without changing width holds still and just fades.
+   */
+  --fret-morph-lead: 0s;
+  --fret-morph-hold: 0s;
+  transition: width var(--durSettle) var(--easeOut) var(--fret-morph-hold);
+}
+
+.fret-morph--grow {
+  --fret-morph-lead: var(--durSettle);
+}
+
+.fret-morph--shrink {
+  --fret-morph-hold: var(--durExchange);
+}
+
+/*
+ * No ellipsis mid-exchange. While the box is still widening the incoming line
+ * is longer than the box that will hold it, and text-overflow does not care
+ * that every character of it is at zero opacity — it draws the ellipsis at
+ * full strength, so the key shows "Copy link …" with the dots the only part
+ * that is really there. The characters underneath stay clipped, which is
+ * exactly right: they are invisible until the box has finished making room.
+ */
+.fret-morph--exchanging {
+  text-overflow: clip;
+}
+
+/*
+ * The label's width, without the label. Laid out, so it measures; hidden from
+ * paint and from the accessibility tree, so it is neither seen nor read. It
+ * exists because a box carrying an explicit width can no longer report what
+ * its content would like to be, and the aperture needs exactly that number.
+ */
+.fret-morph__sizer {
+  position: absolute;
+  visibility: hidden;
+  width: max-content;
+  pointer-events: none;
 }
 
 .fret-morph__out {
@@ -539,7 +604,9 @@
   animation-name: fretMorphOut;
   animation-duration: var(--durPress);
   animation-timing-function: var(--easeExit);
-  animation-delay: calc(var(--fret-morph-at) * var(--durCascade));
+  animation-delay: calc(
+    var(--fret-morph-lead) + var(--fret-morph-at) * var(--durCascade)
+  );
 }
 
 /*
@@ -556,7 +623,8 @@
   animation-duration: var(--durFast);
   animation-timing-function: var(--easeOut);
   animation-delay: calc(
-    var(--durCascade) + var(--durPress) + var(--fret-morph-at) * var(--durCascade)
+    var(--fret-morph-lead) + var(--durCascade) + var(--durPress) +
+      var(--fret-morph-at) * var(--durCascade)
   );
 }
 
