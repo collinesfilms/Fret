@@ -74,6 +74,20 @@ go test ./...                   # includes an end-to-end suite on an in-process 
 cd web && npm run build && cd .. && go build ./cmd/fret
 ```
 
+The icon is `web/public/favicon.svg`, drawn like every other mark here. The
+PNGs beside it exist only because a home screen reads its icon out of a raster
+file, and they are generated from the SVG — never hand-edited:
+
+```sh
+cd web && FRET_CHROMIUM=/path/to/chromium npm run icons
+```
+
+The manifest is served by Go rather than shipped as a file, because
+`FRET_APP_NAME` renames the app and a static one would install a renamed
+instance calling itself Fret. Every root filename it references is in
+`slug.reserved`: a real file always beats a slug, so those names would not
+shadow anything — they would just produce links that silently never resolve.
+
 Screenshots in `docs/screenshots/` are captured from the running application
 by `web/scripts/screenshots.mjs` — never mocked up. Re-run after any visual
 change:

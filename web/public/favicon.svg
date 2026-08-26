@@ -1,0 +1,17 @@
+<!--
+  Fret's mark: the device's screen, with the caret on it.
+
+  Drawn rather than exported, like every other mark in this interface. At the
+  size a tab actually renders it there is room for exactly one idea, and the
+  caret is the one thing here nobody else has — a red block cursor on a black
+  readout. The line beside it is dimmed enough to read as texture rather than
+  as a second element competing with it.
+
+  The PNGs under this directory are rasterised from this file by
+  `npm run icons`. Edit this; never edit those.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="7" fill="#17171a" />
+  <rect x="5.6" y="14.9" width="12.4" height="2.4" rx="1.2" fill="#efece5" opacity="0.42" />
+  <rect x="20.2" y="10.4" width="4.8" height="11.4" rx="1.1" fill="#cf3f28" />
+</svg>

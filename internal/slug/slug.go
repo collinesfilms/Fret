@@ -109,10 +109,17 @@ func Normalize(s string) string {
 }
 
 // Reserved slugs would otherwise shadow the application's own routes.
+//
+// The icons and the manifest are here for a subtler reason than the routes
+// are: a real file at the root always wins over a slug, so claiming one of
+// these names would not shadow anything — it would simply produce a link that
+// silently never resolves, which is worse.
 var reserved = map[string]bool{
 	"api": true, "auth": true, "assets": true, "static": true, "health": true,
 	"favicon.ico": true, "robots.txt": true, "admin": true, "settings": true,
 	"login": true, "logout": true, "index.html": true, "manifest.json": true,
+	"manifest.webmanifest": true, "favicon.svg": true, "apple-touch-icon.png": true,
+	"icon-192.png": true, "icon-512.png": true,
 }
 
 // Validate checks a user-supplied slug.

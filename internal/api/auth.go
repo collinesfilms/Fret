@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/url"
@@ -111,6 +112,48 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 		Locale:       s.cfg.Locale,
 		PublicHost:   hostOf(s.cfg.PublicURL),
 		ProviderHost: hostOf(s.cfg.OIDCIssuer),
+	})
+}
+
+// handleManifest serves the web app manifest.
+//
+// It is generated rather than shipped as a file because the app's name is
+// configuration: FRET_APP_NAME renames the interface, the browser tab and the
+// sign-in screen, and a static manifest would still install a renamed
+// instance to somebody's home screen calling itself Fret.
+//
+// The icons are real files under the embedded frontend; only the text around
+// them depends on how this instance is set up.
+func (s *Server) handleManifest(w http.ResponseWriter, r *http.Request) {
+	// Written directly rather than through send, which would stamp this
+	// application/json. The manifest MIME type is what tells a browser this is
+	// an install descriptor rather than a document it happens to be fetching.
+	w.Header().Set("Content-Type", "application/manifest+json")
+	// Cheap to regenerate, and stale for a day if it is cached across a rename.
+	w.Header().Set("Cache-Control", "no-cache")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"name":       s.cfg.AppName,
+		"short_name": s.cfg.AppName,
+		"start_url":  "/",
+		"scope":      "/",
+		"display":    "standalone",
+		// The device's own body and the studio it sits on, so the splash
+		// screen is the interface arriving rather than a white flash.
+		"theme_color":      "#f4f2ee",
+		"background_color": "#e9e7e2",
+		"icons": []map[string]any{
+			{"src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml"},
+			{"src": "/icon-192.png", "sizes": "192x192", "type": "image/png"},
+			{"src": "/icon-512.png", "sizes": "512x512", "type": "image/png"},
+			{
+				"src": "/icon-512.png", "sizes": "512x512", "type": "image/png",
+				// The mark is drawn on its own dark ground with its corners
+				// already rounded, so a platform that crops to a circle takes
+				// the corners rather than the caret.
+				"purpose": "maskable",
+			},
+		},
 	})
 }
 

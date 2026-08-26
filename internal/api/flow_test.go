@@ -670,6 +670,60 @@ func TestPublicConfigIsReadableWithoutASession(t *testing.T) {
 	}
 }
 
+// The manifest carries the instance's own name, not the project's. An
+// installed shortcut is the one place a renamed deployment cannot be
+// corrected after the fact.
+func TestManifestCarriesTheConfiguredAppName(t *testing.T) {
+	h := newHarness(t)
+	h.cfg.AppName = "Collines Transfer"
+
+	resp, body := h.public(http.MethodGet, "/manifest.webmanifest", nil)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("manifest returned %d: %s", resp.StatusCode, body)
+	}
+	if got := resp.Header.Get("Content-Type"); got != "application/manifest+json" {
+		t.Errorf("manifest content type is %q", got)
+	}
+
+	manifest := decodeInto[struct {
+		Name      string `json:"name"`
+		ShortName string `json:"short_name"`
+		Icons     []struct {
+			Src     string `json:"src"`
+			Purpose string `json:"purpose"`
+		} `json:"icons"`
+	}](t, body)
+
+	if manifest.Name != "Collines Transfer" || manifest.ShortName != "Collines Transfer" {
+		t.Errorf("manifest ignored the configured name: %s", body)
+	}
+	var maskable bool
+	for _, icon := range manifest.Icons {
+		if icon.Purpose == "maskable" {
+			maskable = true
+		}
+		if !strings.HasPrefix(icon.Src, "/") {
+			t.Errorf("icon %q is not rooted, so it breaks under any scope", icon.Src)
+		}
+	}
+	if !maskable {
+		t.Error("no maskable icon: a platform that crops to a circle has nothing safe to use")
+	}
+}
+
+// A name that always loses to a real file at the root is worse than a name
+// that is refused: the link would be accepted and then silently never resolve.
+func TestIconAndManifestNamesAreReserved(t *testing.T) {
+	for _, name := range []string{
+		"manifest.webmanifest", "favicon.svg", "favicon.ico",
+		"apple-touch-icon.png", "icon-192.png", "icon-512.png",
+	} {
+		if err := slug.Validate(name); err == nil {
+			t.Errorf("%q is available as a slug", name)
+		}
+	}
+}
+
 func TestHostOf(t *testing.T) {
 	cases := map[string]string{
 		"https://id.example.com":          "id.example.com",

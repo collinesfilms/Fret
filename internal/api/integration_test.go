@@ -26,7 +26,11 @@ import (
 // harness wires a Fret server to an in-process S3, so the upload and download
 // paths are exercised end to end rather than mocked.
 type harness struct {
-	t       *testing.T
+	t *testing.T
+	// The live config the server is reading. Held by pointer, so a test that
+	// needs a differently-configured instance can say so without standing up
+	// a second harness.
+	cfg     *config.Config
 	server  *httptest.Server
 	s3      *httptest.Server
 	db      *db.DB
@@ -84,7 +88,7 @@ func newHarness(t *testing.T) *harness {
 		t.Fatal(err)
 	}
 
-	return &harness{t: t, server: srv, s3: s3srv, db: database, user: user, session: token}
+	return &harness{t: t, cfg: cfg, server: srv, s3: s3srv, db: database, user: user, session: token}
 }
 
 func createBucket(t *testing.T, endpoint, bucket string) {

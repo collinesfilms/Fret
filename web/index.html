@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
     <title>Fret</title>
+
+    <!--
+      The icon is an SVG, drawn like every other mark here. The PNGs beside it
+      exist only because a home screen reads its icon out of a raster file;
+      they are generated from the SVG by `npm run icons`, never hand-edited.
+
+      Shipping one at all is the point: without a favicon a browser keeps
+      showing whatever it last cached for the domain, which on a NAS running
+      several apps behind one host means Fret wearing somebody else's mark.
+    -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!--
+      Served by the API rather than shipped as a file: the app's name is set
+      by FRET_APP_NAME, and a static manifest would install a renamed instance
+      to the home screen still calling itself Fret.
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
